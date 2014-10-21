@@ -11,7 +11,6 @@ const int K = 300;
 
 class AhoCorasik {
     
-public:
     
     struct Node {
         int child[K];
@@ -29,6 +28,8 @@ public:
     };
     
     vector<Node> nodeV;
+    
+public:
     
     AhoCorasik() {
         Node node;
@@ -80,16 +81,7 @@ public:
         }
         return nodeV[vert].go[ch];
     }
-  /*  
-    void setRef(int vert = 0) {
-        getLink(vert);
-        for (int ch = 0; ch < K; ++ch) {
-            if (nodeV[vert].child[ch] != -1) {
-                setRef(nodeV[vert].child[ch]);
-            }
-        }
-    }
-    */
+
     int eatText(const string &text) {
         
         int vert = 0;
@@ -120,13 +112,11 @@ int main()
         corasik.addStr(str);
     }
     
-//    corasik.setRef();
-    
+   
     int m;
     string text;
     cin >> m; 
-    getline(cin, text);
-    //ifstream in(stdin);    
+    getline(cin, text); 
     for (int i = 0; i < m; ++i) {
         getline(cin, text);
         int position = corasik.eatText(text);
