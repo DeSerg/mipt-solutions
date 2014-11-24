@@ -1,6 +1,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 #include "suffixtree.h"
 
 class FindOccurences
@@ -11,7 +12,6 @@ class FindOccurences
     
     std::unordered_map<int, int> vertDepth;
     std::vector<int> occurences;
-    
     
     bool canPass(int vert, int substrStart, int substrEnd) {
         
@@ -30,11 +30,18 @@ class FindOccurences
 
 public:
     
-    std::vector<int> getOccurences() {
-        return occurences;
-    }
+
     FindOccurences(const std::string &pattern_): pattern(pattern_), rootInit(false) {}
 
+    
+    
+    
+    std::vector<int> getOccurences() {
+        std::sort(occurences.begin(), occurences.end());
+        return occurences;
+    }
+    
+    
     void setSourse(const std::string &sourse_) {
         sourse = sourse_;
     }
@@ -51,7 +58,7 @@ public:
             go = false;
             
             if (canPass(from, substrStart, substrEnd)) {
-                occurences.push_back(substrStart - vertDepth[from]);
+                occurences.push_back(substrStart - vertDepth[from] + 1);
             }
             
         } else if (canPass(from, substrStart, substrEnd)) {
@@ -63,9 +70,8 @@ public:
         
     }
     
-    void afterVertexProc(int vert) {
-        
-    }
+    void afterVertexProc(int vert) {}
+    
 };
 
 
@@ -75,14 +81,4 @@ std::vector<int> findAllOccurences(const SuffixTree &suffixTree, const std::stri
     suffixTree.DFS(&visitor);
     
     return visitor.getOccurences();
-}
-
-int main() {
-    
-    SuffixTree st("abcaba");
-    std::vector<int> occur = findAllOccurences(st, "a");
-    
-    for (int val: occur) {
-        cout << val << std::endl;
-    }
 }
