@@ -33,7 +33,9 @@
 
 
 Поддерживаются **google tests**. Чтобы их запустить, нужно выполнить в директории с файлом *tests.cpp* следующую команду:
+```
 g++ -isystem . -g -std=c++11 -Wall -Wextra -pthread -lpthread tests.cpp  gtest_main.a -o out
+```
 
 В директории при этом должны находиться библиотечный файл *gtest_main.a* и 
 директория *gtest* с заголовочными файлами 
