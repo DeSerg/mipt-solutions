@@ -5,12 +5,16 @@
 #include <vector>
 #include <stdexcept>
 #include <limits>
+#include <set>
+#include <unordered_map>
 
 using namespace std;
 
 const int inf = numeric_limits<int>::max();
 
 class SuffixTree {
+    
+    const static int LANG = 100;
     
     struct Link {
         int start;
@@ -27,26 +31,20 @@ class SuffixTree {
         int suffix;
         
         Vertex() {
-            links.assign(256, Link());
+            links.assign(LANG, Link());
             suffix = -1;
         }
     };
 
     vector<Vertex> tree;
+    vector<int> vert_depth;
     int root;
     int dummy;
     string sourse;
     
     //gets the string's character by index
     uchar chr(int ind) {
-        if (ind < 0) {
-            return -ind - 1;
-        } else {
-            if (ind < (int)sourse.length()) 
-                return sourse[ind];
-            else 
-                throw logic_error("Incorrect index");
-        }
+        return sourse[ind];
     }
     
     int &suf(int vert) {
@@ -55,45 +53,39 @@ class SuffixTree {
     
     int newVert() {
         tree.push_back(Vertex());
+        vert_depth.push_back(-1);
         return (int)tree.size() - 1;
     }
     
     void mkLink(int from, int start, int end, int to) {
         
         tree[from].links[chr(start)] = Link(start, end, to);
-        
+        if (end == inf || start == inf) {
+            vert_depth[to] = sourse.length();
+        } else {
+            vert_depth[to] = vert_depth[from] + (end - start);
+        }        
     }
     
-    void print(int v, int start = 0, int end = 0, string prefix = "") {
-        // What's written on the edge that leads here
-        cout << prefix;
-        for(int i = start; i < end && i < (int)sourse.length(); i++)
-            cout << chr(i);
-        
-        if(end == inf) cout << "@";
-        
-        // This vertex and its suffix link
-        cout << "[" << v << "]";
-        if(suf(v) != -1)
-            cout << "f = " << suf(v) << endl;
-        
-        // The children
-        for(int i = 0; i < 256; i++)
-            if(tree[v].links[i].to != -1) {
-                print(tree[v].links[i].to, tree[v].links[i].start,
-                      tree[v].links[i].end, prefix + "   ");
-            }
-    }
+
     
     void initTree() {
         tree.clear();
+        vert_depth.clear();
         dummy = newVert();
         root = newVert();
         
         suf(root) = dummy;
-        for (int i = 0; i < 256; ++i) {
-            mkLink(dummy, -i - 1, -i, root);
+        unordered_map<char, int> letter_pos;
+        for (int i = 0; i < sourse.length(); ++i) {
+            letter_pos[sourse[i]] = i;
         }
+        
+        for (unordered_map<char, int>::iterator it = letter_pos.begin(); 
+             it != letter_pos.end(); ++it) {
+            mkLink(dummy, it->second, it->second + 1, root);
+        }
+        
     }
     
     pair<int, int> canonize(int vert, int start, int end) {
@@ -156,8 +148,33 @@ class SuffixTree {
         return make_pair(vert, start);
     }
     
+    
+    void printWithArgs(int v, int start = 0, int end = 0, string prefix = "") {
+        // What's written on the edge that leads here
+        cout << prefix;
+        for(int i = start; i < end && i < (int)sourse.length(); i++)
+            cout << chr(i);
+        
+        if(end == inf) cout << "@";
+        
+        // This vertex and its suffix link
+        cout << "[" << v << "]";
+        if(suf(v) != -1)
+            cout << "f = " << suf(v) << endl;
+        // The children
+        for(int i = 0; i < LANG; i++)
+            if(tree[v].links[i].to != -1) {
+                printWithArgs(tree[v].links[i].to, tree[v].links[i].start,
+                      tree[v].links[i].end, prefix + "   ");
+            }
+    }
 public:
     
+
+    void print() {
+        printWithArgs(root);
+    }
+
     SuffixTree(const string &source_)
     {
         sourse = source_;
@@ -179,15 +196,17 @@ public:
     template <class Visitor>
     void DFS(Visitor *visitor, int curVert) const {
         
+        //here we set the sourse string of the suffix tree in our Visitor
         static bool set = false;
         if (!set) {
             visitor->setSourse(sourse);
+            visitor->setDepth(vert_depth);
             set = true;
         }
         
         visitor->beforeVertexProc(curVert);
-    
-        for (uchar ch = 0; ch < 255; ++ch) {
+        
+        for (uchar ch = 0; ch < LANG; ++ch) {
             if (tree[curVert].links[ch].to != -1) {
                 Link link = tree[curVert].links[ch];
                 bool go;

@@ -10,21 +10,24 @@ class FindOccurences
     std::string pattern;
     bool rootInit;
     
-    std::unordered_map<int, int> vertDepth;
+    std::vector<int> vert_depth;
     std::vector<int> occurences;
     
     bool canPass(int vert, int substrStart, int substrEnd) {
         
-        if (vertDepth[vert] >= (int)pattern.length()) {
+        if (vert_depth[vert] >= (int)pattern.length()) {
             return true;
         }
         
-        int length = std::min<int>(substrEnd - substrStart, pattern.length() - vertDepth[vert]);
-        std::string::const_iterator patternStart = pattern.cbegin() + vertDepth[vert];
+        
+        int length = std::min<int>(substrEnd - substrStart, pattern.length() - vert_depth[vert]);
+        
+        std::string::const_iterator patternStart = pattern.cbegin() + vert_depth[vert];
         std::string::const_iterator patternEnd = patternStart + length;
         std::string::const_iterator sourseStart = sourse.cbegin() + substrStart;
         
-        return std::equal(patternStart, patternEnd, sourseStart);
+        bool ans = std::equal(patternStart, patternEnd, sourseStart);
+        return ans;
     }
     
 
@@ -32,9 +35,6 @@ public:
     
 
     FindOccurences(const std::string &pattern_): pattern(pattern_), rootInit(false) {}
-
-    
-    
     
     std::vector<int> getOccurences() {
         std::sort(occurences.begin(), occurences.end());
@@ -45,27 +45,31 @@ public:
     void setSourse(const std::string &sourse_) {
         sourse = sourse_;
     }
+    
+    void setDepth(const std::vector<int> &vert_depth) {
+        this->vert_depth = vert_depth;
+    }
+    
     void beforeVertexProc(int vert) {
         if (!rootInit) {
-            vertDepth[vert] = 0;
+            vert_depth[vert] = 0;
             rootInit = true;
         }
     }
     
     void edgeProc(int from, int to, int substrStart, int substrEnd, bool &go) {
-                
-        if (substrEnd > (int)sourse.length()) {
+        
+        substrEnd = std::min(substrEnd, (int)sourse.length());
+        if (substrEnd == (int)sourse.length()) {
             go = false;
             
             if (canPass(from, substrStart, substrEnd)) {
-                occurences.push_back(substrStart - vertDepth[from] + 1);
+                int value = sourse.size() - (substrEnd - substrStart) - vert_depth[from];
+                occurences.push_back(value);
             }
             
-        } else if (canPass(from, substrStart, substrEnd)) {
-            go = true;
-            vertDepth[to] = vertDepth[from] + substrEnd - substrStart;
         } else {
-            go = false;
+            go = canPass(from, substrStart, substrEnd);
         }
         
     }
@@ -76,6 +80,10 @@ public:
 
 
 std::vector<int> findAllOccurences(const SuffixTree &suffixTree, const std::string &pattern) {
+    
+    if (pattern.length() == 0) {
+        return std::vector<int>(0);
+    }
     
     FindOccurences visitor(pattern);
     suffixTree.DFS(&visitor);
