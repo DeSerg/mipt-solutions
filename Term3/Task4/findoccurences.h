@@ -8,6 +8,7 @@ class FindOccurences
 {
     std::string sourse;
     std::string pattern;
+    bool set;
     bool rootInit;
     
     std::vector<int> vert_depth;
@@ -33,8 +34,16 @@ class FindOccurences
 
 public:
     
-
-    FindOccurences(const std::string &pattern_): pattern(pattern_), rootInit(false) {}
+    
+    FindOccurences(const std::string &pattern_): pattern(pattern_), set(false), rootInit(false)  {}
+    
+    bool getSet() {
+        return set;
+    }
+    
+    void setSet(bool value) {
+        set = value;
+    }
     
     std::vector<int> getOccurences() {
         std::sort(occurences.begin(), occurences.end());

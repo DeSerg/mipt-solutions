@@ -14,7 +14,7 @@ const int inf = numeric_limits<int>::max();
 
 class SuffixTree {
     
-    const static int LANG = 100;
+    const static int LANG = 255;
     
     struct Link {
         int start;
@@ -77,7 +77,7 @@ class SuffixTree {
         
         suf(root) = dummy;
         unordered_map<char, int> letter_pos;
-        for (int i = 0; i < sourse.length(); ++i) {
+        for (int i = 0; i < (int)sourse.length(); ++i) {
             letter_pos[sourse[i]] = i;
         }
         
@@ -197,11 +197,10 @@ public:
     void DFS(Visitor *visitor, int curVert) const {
         
         //here we set the sourse string of the suffix tree in our Visitor
-        static bool set = false;
-        if (!set) {
+        if (!visitor->getSet()) {
             visitor->setSourse(sourse);
             visitor->setDepth(vert_depth);
-            set = true;
+            visitor->setSet(true);
         }
         
         visitor->beforeVertexProc(curVert);
