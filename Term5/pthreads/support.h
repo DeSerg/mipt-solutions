@@ -11,6 +11,9 @@
 #include <cassert>
 #include <cstdlib>
 #include <ctime>
+#include <new>
+
+#include <unistd.h>
 
 using namespace std;
 
@@ -19,11 +22,9 @@ enum Cell {
 };
 
 struct Data {
-    vector<vector<Cell>> table;
     int begin_num;
     int cell_amount;
-    int iter_amount;
-    int iter_cur;
+    int id;
 };
 
 enum Status {
@@ -32,10 +33,10 @@ enum Status {
 
 string toLower(string str);
 
-void drawTable(vector<vector<Cell>> table);
+void drawTable(vector<vector<Cell>> &table);
 
 int getCellNum(int i, int j);
 
 void getCellCoords(int num, int &i, int &j);
 
-void *gameIteration(void *data);
+void *startWork(void *data);

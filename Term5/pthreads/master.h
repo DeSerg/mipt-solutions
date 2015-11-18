@@ -7,6 +7,6 @@
 
 void startMethod();
 void statusMethod();
-void runMethod(int Y);
+void runMethod();
 void stopMethod();
 void quitMethod();

@@ -21,14 +21,17 @@ void readCommand() {
     cin >> cmd; 
     cmd = toLower(cmd);
 
-    if (cmd == "status") {
+    if (cmd == "start") {
+        startMethod();
+
+    } else if (cmd == "status") {
         statusMethod();
 
     } else if (cmd == "run") {
         
         cout << "Please, insert number of interations:" << endl;
         cin >> Y;
-        runMethod(Y);
+        runMethod();
         
     } else if (cmd == "stop") {
         stopMethod();
@@ -42,17 +45,39 @@ void readCommand() {
     
 }
 
+void test() {
+    
+    N = 4;
+    M = 4;
+    int test_num = 15;
+    
+    for (int t = 0; t < test_num; ++t) {
+        
+        int i = rand() % N;
+        int j = rand() % M;
+        int num = getCellNum(i, j);
+        int i_, j_;
+        getCellCoords(num, i_, j_);
+        cout << i << " : " << j << endl << num << endl << i_ << " : " << j << endl << endl;        
+    }
+    
+}
+
 int main()
 {
+    
     srand(time(NULL));
     status = before_start;    
-
+    
+//    test();
+    
     //        Старт с заданным начальным распределением (см далее) и количеством
     //        потоков K
     //        Начальное распределение может быть задано в двух вариантах (нужно
     //        реализовать оба):
     //        а)файл в формате CSV (https://ru.wikipedia.org/wiki/CSV)
     //        б)задаются лишь размеры NxM, поле генерируется случайным образом
+    cout << "HELLO!" << endl;
     startMethod();
     
     while (status != on_quit) {

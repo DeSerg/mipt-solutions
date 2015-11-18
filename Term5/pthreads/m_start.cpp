@@ -7,11 +7,13 @@ extern vector<vector<Cell>> cur_table_new;
 extern vector<pthread_t> thread_ref;
 extern Status status;
 
+const double probability = 0.5555;
+
 int getInitType() {
     cout << "Please, choose the way of table initialization (type \"1\" or \"2\"):" << endl;
     cout << "\t1: Initial table is loaded from CSV file" << endl;
     cout << "\t2: Initial table is random" << endl;
-    
+
     int choice;
     cin >> choice;
     while (choice != 1 && choice != 2) {
@@ -20,7 +22,7 @@ int getInitType() {
         cout << "\t1: Initial table is loaded from CSV file" << endl;
         cout << "\t2: Initial table is random" << endl;
         cin >> choice;
-        
+
     }
     
     return choice;
@@ -31,27 +33,31 @@ void fillTable(int N, int M) {
     for (int i = 0; i < N; i++) {
         init_table[i].resize(M);
     }
+    
+    cout << "PROBABLITY " << 100 * probability << endl;
+    
     for (int i = 0; i < N; i++) 
         for (int j = 0; j < M; j++) {
             int type;
-            type = rand() % 10;
-            cout << "Table generation: " << i << ":" << j << ": ";
-            if (type < 2) {
-                cout << "live" << endl;
+            type = rand() % 100;
+//            cout << "Table generation: " << i << ":" << j << ": ";
+            if (type < 100 * probability) {
+//                cout << "live" << endl;
                 init_table[i][j] = live;
             } else {
-                cout << "dead" << endl;
+//                cout << "dead" << endl;
                 init_table[i][j] = dead;
             }
         }
     cur_table.assign(init_table.begin(), init_table.end());
+    cur_table_new.assign(init_table.begin(), init_table.end());
 }
 
 
 void startMethod() {
     
     
-    cout << "Hello! Please, enter number of threads:" << endl;
+    cout << "Please, enter number of threads:" << endl;
     cin >> K;
     
     while (K <= 0) {

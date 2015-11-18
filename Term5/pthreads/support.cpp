@@ -16,13 +16,13 @@ string toLower(string str) {
 }
 
 
-void drawTable(vector<vector<Cell>> table) {
+void drawTable(vector<vector<Cell>> &table) {
     
     if ((int)table.size() < N) {
         cout << "Table size is invalid...";
         return;
     }
-    
+
     for (int i = 0; i < N; i++) {
         
         if ((int)table[i].size() < M) {
@@ -38,6 +38,7 @@ void drawTable(vector<vector<Cell>> table) {
         }
         cout << endl;               
     }
+    cout << endl;
 }
 
 int getCellNum(int i, int j) {
@@ -46,7 +47,7 @@ int getCellNum(int i, int j) {
 
 void getCellCoords(int num, int &i, int &j) {
     
-    i = (num - 1) % M;
+    i = (num - 1) / M;
     j = num - i * M - 1;
     
 }
