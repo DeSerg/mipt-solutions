@@ -10,17 +10,13 @@ Status status;
 
 void readCommand() {
     
-    cout << "Please, choose the action:" << endl;
-    cout << "\"STATUS\" - Initial disposition, if game is in running," 
-            " disposition where the game stopped otherwise" << endl; 
-    cout << "\"RUN\" - Run the game" << endl;
-    cout << "\"STOP\" - Stop the game" << endl;
-    cout << "\"QUIT\" - Quit the game" << endl;
+    cout << "Please, type the command:" << endl;
     
     string cmd;
     cin >> cmd; 
     cmd = toLower(cmd);
-
+    
+    cout << endl;
     if (cmd == "start") {
         startMethod();
 
@@ -38,6 +34,9 @@ void readCommand() {
              
     } else if (cmd == "quit") {
         quitMethod();
+       
+    } else if (cmd == "help") {
+        helpMethod();
        
     } else {
         cout << endl << "Wrong command" << endl;
@@ -67,7 +66,7 @@ int main()
 {
     
     srand(time(NULL));
-    status = before_start;    
+    status = stopped;    
     
 //    test();
     
@@ -77,8 +76,10 @@ int main()
     //        реализовать оба):
     //        а)файл в формате CSV (https://ru.wikipedia.org/wiki/CSV)
     //        б)задаются лишь размеры NxM, поле генерируется случайным образом
+    
     cout << "HELLO!" << endl;
     startMethod();
+    helpMethod();
     
     while (status != on_quit) {
         cout << "\n\n";

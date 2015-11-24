@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <new>
+#include <csignal>
 
 #include <unistd.h>
 
@@ -28,7 +29,7 @@ struct Data {
 };
 
 enum Status {
-    before_start, in_progress, stopped, on_quit
+    running, stopped, on_quit
 };
 
 string toLower(string str);
@@ -40,3 +41,10 @@ int getCellNum(int i, int j);
 void getCellCoords(int num, int &i, int &j);
 
 void *startWork(void *data);
+
+void startMethod();
+void statusMethod();
+void runMethod();
+void stopMethod();
+void quitMethod();
+void helpMethod();

@@ -10,7 +10,10 @@ void quitMethod() {
     
     //Завершение программы с корректной приостановкой потоков 
     
-    //not done yet
+    if (status == running) {
+        stopMethod();
+    }
+    
     status = on_quit;
     
 }

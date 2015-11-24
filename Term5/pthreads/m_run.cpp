@@ -14,7 +14,7 @@ pthread_mutex_t condition_m;
 vector<vector<pthread_mutex_t>> mutex_table;
 Data *data;
 pthread_cond_t condition_var;
-
+vector<Data> thread_data;
 
 void calculateData(int thread_num, Data &data) {
     data.id = thread_num + 1;
@@ -28,6 +28,12 @@ void calculateData(int thread_num, Data &data) {
 
 void runMethod() {
 //        Выполнение Y итераций
+    
+    if (status == running) {
+        cout << "Sorry, the game is already running..." << endl;
+        return;
+    }
+    
     K = min(N * M, K);
     thread_ref.resize(K);
     data = new Data[K];
@@ -46,5 +52,7 @@ void runMethod() {
         calculateData(i, data[i]);
         pthread_create(&thread_ref[i], 0, &startWork, &data[i]);
     }
+    
+    status = running;
     
 }

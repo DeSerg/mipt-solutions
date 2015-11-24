@@ -11,7 +11,8 @@ SOURCES += \
     m_status.cpp \
     m_run.cpp \
     m_stop.cpp \
-    m_quit.cpp
+    m_quit.cpp \
+    m_help.cpp
 
 LIBS += -lpthread
 

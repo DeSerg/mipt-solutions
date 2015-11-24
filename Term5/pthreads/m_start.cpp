@@ -7,7 +7,7 @@ extern vector<vector<Cell>> cur_table_new;
 extern vector<pthread_t> thread_ref;
 extern Status status;
 
-const double probability = 0.5555;
+const double probability = 0.5;
 
 int getInitType() {
     cout << "Please, choose the way of table initialization (type \"1\" or \"2\"):" << endl;
@@ -34,7 +34,7 @@ void fillTable(int N, int M) {
         init_table[i].resize(M);
     }
     
-    cout << "PROBABLITY " << 100 * probability << endl;
+//    cout << "PROBABLITY " << 100 * probability << endl;
     
     for (int i = 0; i < N; i++) 
         for (int j = 0; j < M; j++) {

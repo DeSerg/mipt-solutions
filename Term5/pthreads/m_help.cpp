@@ -6,14 +6,15 @@ extern vector<vector<Cell>> cur_table;
 extern vector<pthread_t> thread_ref;
 extern Status status;
 
-void statusMethod() {
+void helpMethod() {
 //        STATUS Отображение статуса текущей итерации (на которой остановились,
 //        после старта -  отображение начального распределения)
-    if (status == running) {
-        cout << "Game is running" << endl;
-        drawTable(init_table);
-    } else {
-        cout << "Game is stopped" << endl;
-        drawTable(cur_table);
-    }
+    cout << "Program supports following commands:" << endl;
+    cout << "\"STATUS\" - Initial disposition, if game is in running," 
+            " disposition where the game stopped otherwise" << endl; 
+    cout << "\"RUN\" - Run the game" << endl;
+    cout << "\"STOP\" - Stop the game" << endl;
+    cout << "\"QUIT\" - Quit the game" << endl;
+    cout << "\"HELP\" - Remind commands" << endl;
 }
+
