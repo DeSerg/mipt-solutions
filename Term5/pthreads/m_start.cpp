@@ -9,6 +9,8 @@ extern Status status;
 
 const double probability = 0.5;
 
+string filename = "/home/serg/Documents/Programming/Parallel/LifeTheGame/table.csv";
+
 int getInitType() {
     cout << "Please, choose the way of table initialization (type \"1\" or \"2\"):" << endl;
     cout << "\t1: Initial table is loaded from CSV file" << endl;
@@ -49,13 +51,90 @@ void fillTable(int N, int M) {
                 init_table[i][j] = dead;
             }
         }
-    cur_table.assign(init_table.begin(), init_table.end());
-    cur_table_new.assign(init_table.begin(), init_table.end());
 }
 
+void getTable() {
+    
+    cout << "Please, enter table's height:" << endl;
+    cin >> N;
+    cout << "Please, enter table's width:" << endl;
+    cin >> M;
+    
+    fillTable(N, M);
+    
+}
+
+void trim(string &str) {
+    std::stringstream trimmer;
+    trimmer << str;
+    str.clear();
+    trimmer >> str;
+}
+
+int getCSVTable() {
+    
+    ifstream file(filename);
+    string line;
+    string token;
+    
+    if (file.is_open()) {
+        
+        
+        init_table.clear();
+        int width = 0;
+        
+        while (getline(file,line)) {
+            
+            init_table.push_back(vector<Cell>());
+            
+            istringstream ss(line);
+            
+            while(getline(ss, token, ',')) {
+                Cell cell;
+                trim(token);
+                if (token == "1") {
+                    cell = live;
+                } else {
+                    cell = dead;
+                }
+                init_table[init_table.size() - 1].push_back(cell);
+            }
+            
+            int cur_width = init_table[init_table.size() - 1].size();
+            if (width == 0) {
+                width = cur_width;
+                M = width;
+            } else if (cur_width != width) {
+                cout << "Table has lines with different size" << endl;
+                return 1;
+            }
+            
+        }
+        
+        N = init_table.size();
+        file.close();
+        
+        return 0;
+    } else {
+        cout << "Something is wrong while reading the file..." << endl;
+        cout << "Table will be generated randomly" << endl;
+        return 1;
+    }
+    
+    
+    
+    
+}
 
 void startMethod() {
     
+    
+//        Старт с заданным начальным распределением (см далее) и количеством
+//        потоков K
+//        Начальное распределение может быть задано в двух вариантах (нужно
+//        реализовать оба):
+//        а)файл в формате CSV (https://ru.wikipedia.org/wiki/CSV)
+//        б)задаются лишь размеры NxM, поле генерируется случайным образом
     
     cout << "Please, enter number of threads:" << endl;
     cin >> K;
@@ -70,19 +149,25 @@ void startMethod() {
     int choice = getInitType();
     
     if (choice == 1) {
-        //not done!!
-        cout << "Sorry, not implemented yet.." << endl;
-    } else if (choice == 2) {
-        cout << "Please, enter table's height:" << endl;
-        cin >> N;
-        cout << "Please, enter table's width:" << endl;
-        cin >> M;
         
-        fillTable(N, M);
+        if (getCSVTable() == 1) {
+            getTable();
+        }
+        
+        cout << "Here's your initial table:" << endl;
+        drawTable(init_table);        
+        
+    } else if (choice == 2) {
+        
+        getTable();
         cout << "Here's your initial table:" << endl;
         drawTable(init_table);        
     } else {
         cout << "Wrong choice while starting..." << endl;
     }
+    
+    cur_table.assign(init_table.begin(), init_table.end());
+    cur_table_new.assign(init_table.begin(), init_table.end());
+    
     status = stopped;
 }

@@ -13,7 +13,9 @@
 #include <ctime>
 #include <new>
 #include <csignal>
-
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <unistd.h>
 
 using namespace std;

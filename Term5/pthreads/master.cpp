@@ -69,14 +69,7 @@ int main()
     status = stopped;    
     
 //    test();
-    
-    //        Старт с заданным начальным распределением (см далее) и количеством
-    //        потоков K
-    //        Начальное распределение может быть задано в двух вариантах (нужно
-    //        реализовать оба):
-    //        а)файл в формате CSV (https://ru.wikipedia.org/wiki/CSV)
-    //        б)задаются лишь размеры NxM, поле генерируется случайным образом
-    
+
     cout << "HELLO!" << endl;
     startMethod();
     helpMethod();
@@ -85,6 +78,8 @@ int main()
         cout << "\n\n";
         readCommand();
     }
+    
+    cout << "Good bye.." << endl;
     return 0;
 }
 

@@ -20,3 +20,6 @@ HEADERS += \
     support.h \
     master.h \
     worker.h
+
+DISTFILES += \
+    table.csv

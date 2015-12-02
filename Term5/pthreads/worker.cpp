@@ -18,8 +18,9 @@ extern vector<Data> thread_data;
 
 int di[8] = {1, 1, 1, 0, -1, -1, -1, 0};
 int dj[8] = {-1, 0, 1, 1, 1, 0, -1, -1};
-sig_atomic_t signaled;
+int signaled;
 pthread_mutex_t signaled_m;
+pthread_mutex_t signaled_handler_m;
 pthread_mutex_t status_m;
 
 void obtainCell(int i, int j) {
@@ -83,17 +84,19 @@ void performIteration(int begin_num, int cell_amount) {
 void sigHandler(int sigNum) {
     
     cout << "I AM BEING SIGNALLED!" << endl;
-    pthread_mutex_lock(&signaled_m);
+    pthread_mutex_lock(&signaled_handler_m);
     signaled = 1;
-    pthread_mutex_unlock(&signaled_m);
     cout << "SIGNALED IS NOW " << signaled << endl;
+    pthread_mutex_unlock(&signaled_handler_m);
     
 }
 
 void *startWork(void *raw_data) {
     
     signaled_m = PTHREAD_MUTEX_INITIALIZER;
-    sig_atomic_t signaled = 0;
+    signaled_handler_m = PTHREAD_MUTEX_INITIALIZER;
+    status_m = PTHREAD_MUTEX_INITIALIZER;
+    signaled = 0; 
     signal(SIGUSR1, sigHandler);
     
     Data *data = (Data *) raw_data;
@@ -116,7 +119,7 @@ void *startWork(void *raw_data) {
         pthread_mutex_lock(&condition_m);
         
         if (thread_count_local == K) {
-            cout << "#" << thread_id << " is the last in iteration!" << endl;
+            cout << "#" << thread_id << " is the last in iteration " << i << endl;
             thread_iter_count = 0;
             swap(cur_table, cur_table_new);
 //            system("clear");
@@ -135,15 +138,18 @@ void *startWork(void *raw_data) {
             pthread_cond_wait(&condition_var, &condition_m);
         }
         
+//        cout << "MY ASS IS #" << thread_id << endl;
         pthread_mutex_unlock(&condition_m);
         
         pthread_mutex_lock(&signaled_m);
+        cout << "Sig val: " << signaled << endl;
+//        usleep(1e6);
         if (signaled == 1) {
-            
+            cout << "MY NAME IS #" << thread_id << endl;
             pthread_mutex_lock(&status_m);
             status = stopped;
             pthread_mutex_unlock(&status_m);            
-            cout << "Thread #" << thread_id << " stopped at iteration " << Y << endl;
+            cout << "Thread #" << thread_id << " stopped at iteration " << i << endl;
             break;
         }
         pthread_mutex_unlock(&signaled_m);
