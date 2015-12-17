@@ -5,6 +5,7 @@ extern vector<vector<Cell>> init_table;
 extern vector<vector<Cell>> cur_table;
 extern vector<pthread_t> thread_ref;
 extern Status status;
+extern int signaled;
 
 void stopMethod() {
 //        Досрочная остановка вычислений:

@@ -11,7 +11,6 @@ int iter_cur;
 int thread_iter_count;
 pthread_mutex_t thread_count_m;
 pthread_mutex_t condition_m;
-vector<vector<pthread_mutex_t>> mutex_table;
 Data *data;
 pthread_cond_t condition_var;
 vector<Data> thread_data;
@@ -41,12 +40,6 @@ void runMethod() {
     thread_iter_count = 0;
     thread_count_m = PTHREAD_MUTEX_INITIALIZER;
     condition_m = PTHREAD_MUTEX_INITIALIZER;
-    
-    mutex_table.resize(N);
-    for (int i = 0; i < N; i++) {
-        mutex_table[i].assign(M, PTHREAD_MUTEX_INITIALIZER);
-                
-    }
     
     for (int i = 0; i < K; i++) {
         calculateData(i, data[i]);

@@ -9,7 +9,7 @@ extern Status status;
 
 const double probability = 0.5;
 
-string filename = "/home/serg/Documents/Programming/Parallel/LifeTheGame/table.csv";
+string filename = "/home/deserg/git/mipt-solutions/Term5/build-LifeTheGame-Desktop-Debug/table.csv";
 
 int getInitType() {
     cout << "Please, choose the way of table initialization (type \"1\" or \"2\"):" << endl;

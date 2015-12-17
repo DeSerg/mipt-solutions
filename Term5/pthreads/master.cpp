@@ -7,6 +7,7 @@ vector<vector<Cell>> init_table;
 vector<pthread_t> thread_ref;
 pthread_t mngr_ref;
 Status status;
+int signaled;
 
 void readCommand() {
     
