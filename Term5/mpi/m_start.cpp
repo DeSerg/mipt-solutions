@@ -1,11 +1,14 @@
 #include "support.h"
 
 extern int K, N, M;
-extern vector<vector<Cell> > init_table;
-extern vector<vector<Cell> > cur_table;
-extern vector<vector<Cell> > cur_table_new;
-extern vector<pthread_t> thread_ref;
 extern Status status;
+
+extern MPI_Comm work_comm;
+extern MPI_Comm master_comm;
+
+extern int **cur_table;
+extern int **cur_table_new;
+extern int **init_table;
 
 const double probability = 0.5;
 
@@ -31,10 +34,6 @@ int getInitType() {
 }
 
 void fillTable(int N, int M) {
-    init_table.resize(N);
-    for (int i = 0; i < N; i++) {
-        init_table[i].resize(M);
-    }
     
 //    cout << "PROBABLITY " << 100 * probability << endl;
     
@@ -71,7 +70,6 @@ void trim(string &str) {
     trimmer >> str;
 }
 
-/*
 int getCSVTable() {
     
     ifstream file(filename);
@@ -91,7 +89,7 @@ int getCSVTable() {
             istringstream ss(line);
             
             while(getline(ss, token, ',')) {
-                Cell cell;
+                int cell;
                 trim(token);
                 if (token == "1") {
                     cell = live;
@@ -126,7 +124,7 @@ int getCSVTable() {
     
     
 }
-*/
+
 void startMethod() {
     
     
@@ -137,38 +135,12 @@ void startMethod() {
 //        а)файл в формате CSV (https://ru.wikipedia.org/wiki/CSV)
 //        б)задаются лишь размеры NxM, поле генерируется случайным образом
     
-    cout << "Please, enter number of threads:" << endl;
-    cin >> K;
+    int size;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
     
-    while (K <= 0) {
-        cout << "Number of threads should be positive!" << endl;
-        cout << "Please, enter number of threads:" << endl;
-        cin >> K;        
-    }
-    thread_ref.resize(K);
-    
-    int choice = getInitType();
-    
-    if (choice == 1) {
-        
-        if (/*getCSVTable()*/1 == 1) {
-            getTable();
-        }
-        
-        cout << "Here's your initial table:" << endl;
-        drawTable(init_table);        
-        
-    } else if (choice == 2) {
-        
-        getTable();
-        cout << "Here's your initial table:" << endl;
-        drawTable(init_table);        
-    } else {
-        cout << "Wrong choice while starting..." << endl;
+    int ready = 1;
+    for (int i = 1; i <= size; ++i) {
+        MPI_Send(&ready, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
     }
     
-    cur_table.assign(init_table.begin(), init_table.end());
-    cur_table_new.assign(init_table.begin(), init_table.end());
-    
-    status = stopped;
 }

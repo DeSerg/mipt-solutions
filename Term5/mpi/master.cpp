@@ -1,15 +1,16 @@
-#include "support.h"
+#include "master.h"
+
 
 int K, N, M, Y;
-vector<vector<Cell> > cur_table;
-vector<vector<Cell> > cur_table_new;
-vector<vector<Cell> > init_table;
-vector<pthread_t> thread_ref;
-pthread_t mngr_ref;
+
 Status status;
 
 MPI_Comm work_comm;
 MPI_Comm master_comm;
+
+int **cur_table;
+int **cur_table_new;
+int **init_table;
 
 void readCommand() {
     
@@ -47,24 +48,6 @@ void readCommand() {
     
 }
 
-void test() {
-    
-    N = 4;
-    M = 4;
-    int test_num = 15;
-    
-    for (int t = 0; t < test_num; ++t) {
-        
-        int i = rand() % N;
-        int j = rand() % M;
-        int num = getCellNum(i, j);
-        int i_, j_;
-        getCellCoords(num, i_, j_);
-        cout << i << " : " << j << endl << num << endl << i_ << " : " << j << endl << endl;        
-    }
-    
-}
-
 int main(int argc, char **argv)
 {
     MPI_Init(&argc, &argv);
@@ -77,29 +60,56 @@ int main(int argc, char **argv)
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     
+    MPI_Group work_group_all;
+    MPI_Group work_group;
+    MPI_Comm_group(MPI_COMM_WORLD, &work_group_all);
+    
+    int n[1] = {0};
+    MPI_Group_excl(work_group_all, 1, n, &work_group);
+    MPI_Comm_create(MPI_COMM_WORLD, work_group, work_comm);
+    
     if (world_rank == 0) {
-        MPI_Comm_split(MPI_COMM_WORLD, 0, world_rank, &master_comm);        
+//        MPI_Comm_split(MPI_COMM_WORLD, 0, world_rank, &master_comm);        
         
-        int loc_rank;
-        MPI_Comm_rank(master_comm, &loc_rank);
+//        int loc_rank;
+//        MPI_Comm_rank(master_comm, &loc_rank);
         
-        int loc_size;
-        MPI_Comm_size(master_comm, &loc_size);
+//        int loc_size;
+//        MPI_Comm_size(master_comm, &loc_size);
         
-        cout << "MASTER: Rank/size: " << loc_rank << "/" << loc_size << endl;
+//        cout << "MASTER: Rank/size: " << loc_rank << "/" << loc_size << endl;
         
-        startMethod();
+//        sleep(5);
+        for (int i = 1; i < world_size; ++i) {
+            MPI_Send(&i, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+        }
+        
+//        startMethod();
         
     } else {
-        MPI_Comm_split(MPI_COMM_WORLD, 1, world_rank, &work_comm);
+//        MPI_Comm_split(MPI_COMM_WORLD, 1, world_rank, &work_comm);
         
-        int loc_rank;
-        MPI_Comm_rank(work_comm, &loc_rank);
+//        int loc_rank;
+//        MPI_Comm_rank(work_comm, &loc_rank);
         
-        int loc_size;
-        MPI_Comm_size(work_comm, &loc_size);
+//        int loc_size;
+//        MPI_Comm_size(work_comm, &loc_size);
         
-        cout << "WORKER: Rank/size: " << loc_rank << "/" << loc_size << endl;
+//        cout << "WORKER: Rank/size: " << loc_rank << "/" << loc_size << endl;
+        int work_rank;
+        MPI_Comm_rank(work_comm, &work_comm);
+        
+        int work_size;
+        MPI_Comm_size(work_comm, &work_size);
+        
+        cout << "Hello from work_comm, I am " << work_rank << " of " << work_size << endl;
+        
+        int ready = 0;
+        MPI_Recv(&ready, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+              
+        cout << "Worker #" << world_rank << ": I AM READY! (" << ready << ")" << endl;
+//        work();
+        
     }
     
     

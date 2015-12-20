@@ -1,8 +1,6 @@
 #include "support.h"
 
 extern int K, N, M;
-extern vector<vector<Cell> > table;
-extern vector<pthread_t> thread_ref;
 extern Status status;
 
 string toLower(string str) {
@@ -16,19 +14,9 @@ string toLower(string str) {
 }
 
 
-void drawTable(vector<vector<Cell> > &table) {
+void drawTable(int **table, int N, int M) {
     
-    if ((int)table.size() < N) {
-        cout << "Table size is invalid...";
-        return;
-    }
-
     for (int i = 0; i < N; i++) {
-        
-        if ((int)table[i].size() < M) {
-            cout << "Table size is invalid...";
-            return;
-        }
         for (int j = 0; j < M; j++) {
             if (table[i][j] == live) {
                 cout << "+";
@@ -50,4 +38,21 @@ void getCellCoords(int num, int &i, int &j) {
     i = (num - 1) / M;
     j = num - i * M - 1;
     
+}
+
+int **allocArray(int N, int M) {
+    
+    int** array = new int*[N];
+    
+    for(int i = 0; i < N; ++i) {
+        array[i] = new int[M];
+    }
+}
+
+void copyArray(int **source, int **dest, int N, int M) {
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < M; ++j) {
+            dest[i][j] = source[i][j];
+        }
+    }
 }

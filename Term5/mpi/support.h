@@ -3,6 +3,7 @@
 
 #endif // SUPPORT
 
+
 #include <string>
 #include <locale> 
 #include <iostream>
@@ -18,11 +19,12 @@
 #include <sstream>
 #include <unistd.h>
 #include <mpi.h>
+
+#define live 0
+#define dead 1
+
 using namespace std;
 
-enum Cell {
-    live, dead
-};
 
 struct Data {
     int begin_num;
@@ -36,13 +38,13 @@ enum Status {
 
 string toLower(string str);
 
-void drawTable(vector<vector<Cell> > &table);
+void drawTable(int **table, int N, int M);
 
 int getCellNum(int i, int j);
 
 void getCellCoords(int num, int &i, int &j);
 
-void *startWork(void *data);
+void work();
 
 void startMethod();
 void statusMethod();
@@ -50,3 +52,6 @@ void runMethod();
 void stopMethod();
 void quitMethod();
 void helpMethod();
+
+int **allocArray(int N, int M);
+void copyArray(int **source, int **dest, int N, int M);
