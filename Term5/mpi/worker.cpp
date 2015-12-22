@@ -37,7 +37,7 @@ void obtainCell(int i, int j) {
         }
     }
     
-    int cell = cur_table[i][j];
+    int cell = worker_table[i][j];
     
     int new_cell = live;
     if ((cell == live && (live_sum < 2 || live_sum > 3)) ||
@@ -50,9 +50,9 @@ void obtainCell(int i, int j) {
 }
 
 void performIteration() {
-    
-    copyArray(worker_array, worker_table_new, 1, M);
-    copyArray(worker_array[N][0], worker_table_new[N][0], 1, M);
+       
+    memcpy(&(worker_table[0][0]), &(worker_table_new[0][0]), M * sizeof(int));
+    memcpy(&(worker_table[N][0]), &(worker_table_new[N][0]), M * sizeof(int));
     
     for (int i = 1; i < N - 1; ++i) {
         for (int j = 0; j < M; ++j) {
@@ -110,12 +110,23 @@ void startGame() {
 
 void work() {
     
-    cerr << "W" << work_rank << "/" << work_size << endl;
-    
-    MPI_Bcast(&N, 1, MPI_INT, 0, intercomm);
     MPI_Bcast(&M, 1, MPI_INT, 0, intercomm);
-
+    MPI_Recv(&N, 1, MPI_INT, 0, data_tag, intercomm, MPI_STATUS_IGNORE);
+        
+    worker_table = allocArray(N, M);
+    worker_table_new = allocArray(N, M);
+    
     MPI_Recv(&(worker_table[0][0]), N * M, MPI_INT, 0, data_tag, intercomm, MPI_STATUS_IGNORE);
+    
+    for (int i = 0; i < work_size; ++i) {
+        
+        if (work_rank == i) {
+            cerr << "#" << work_rank << ": " << N << "x" << M << endl;
+            drawTable(worker_table, N, M);
+        }
+        
+        MPI_Barrier(work_comm);
+    }
     
     MPI_Iprobe(0, quit_tag, intercomm, &quit_flag, NULL);
     
@@ -131,8 +142,10 @@ void work() {
             startGame();
         }
         
-        
         MPI_Iprobe(0, quit_tag, intercomm, &quit_flag, NULL);
         
     }
+    
+    deallocArray(worker_table, N);
+    deallocArray(worker_table_new, N);
 }

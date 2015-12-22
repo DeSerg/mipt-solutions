@@ -6,6 +6,8 @@ extern Status status;
 extern int world_rank, world_size;
 extern int work_rank, work_size;
 
+extern MPI_Comm intercomm;
+
 void runMethod() {
 //        Выполнение Y итераций
     MPI_Request send_req;

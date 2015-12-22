@@ -24,7 +24,7 @@ void statusMethod() {
     } else if (status == stopped) {
         cout << "Game is stopped" << endl;
     }
-
+    
     drawTable(init_table, N, M);
     
 }

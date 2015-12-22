@@ -18,6 +18,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <mpi/mpi.h>
+#include <string.h>
 
 #define live 0
 #define dead 1
@@ -58,4 +59,5 @@ void quitMethod();
 void helpMethod();
 
 int **allocArray(int N, int M);
+void deallocArray(int **array, int N);
 void copyArray(int **source, int **dest, int N, int M);

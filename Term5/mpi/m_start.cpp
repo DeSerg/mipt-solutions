@@ -7,14 +7,13 @@ extern MPI_Comm work_comm;
 extern MPI_Comm master_comm;
 extern MPI_Comm intercomm;
 
-extern int **cur_table;
 extern int **init_table;
 
 extern int world_rank, world_size;
 
 const double probability = 0.5;
 
-string filename = "/home/deserg/git/mipt-solutions/Term5/build-LifeTheGame-Desktop-Debug/table.csv";
+string filename = "/home/serg/Documents/Programming/Parallel/mpi/table.csv";
 
 int getInitType() {
     cout << "Please, choose the way of table initialization (type \"1\" or \"2\"):" << endl;
@@ -45,14 +44,13 @@ void fillTable(int N, int M) {
             type = rand() % 100;
 //            cout << "Table generation: " << i << ":" << j << ": ";
             if (type < 100 * probability) {
-//                cout << "live" << endl;
                 init_table[i][j] = live;
             } else {
-//                cout << "dead" << endl;
                 init_table[i][j] = dead;
             }
         }
 }
+
 
 void getTable() {
     
@@ -90,7 +88,7 @@ int getCSVTable() {
         
         while (getline(file,line)) {
             
-            inp_vector.push_back(vector<Cell>());
+            inp_vector.push_back(vector<int>());
             
             istringstream ss(line);
             
@@ -102,7 +100,7 @@ int getCSVTable() {
                 } else {
                     cell = dead;
                 }
-                inp_vector[init_table.size() - 1].push_back(cell);
+                inp_vector[inp_vector.size() - 1].push_back(cell);
             }
             
             int cur_width = inp_vector[inp_vector.size() - 1].size();
@@ -137,7 +135,6 @@ int getCSVTable() {
        
 }
 
-
 void startMethod() {
 
 //        Старт с заданным начальным распределением (см далее) и количеством
@@ -149,30 +146,54 @@ void startMethod() {
     int choice = getInitType();
     
     if (choice == 1) {
-        getCSVTable();
-    } else {
+        
+        if (getCSVTable() == 1) {
+            getTable();
+        }
+        
+        cout << "Here's your initial table:" << endl;
+        drawTable(init_table, N, M);        
+        
+    } else if (choice == 2) {
+        
         getTable();
+        cout << "Here's your initial table:" << endl;
+        drawTable(init_table, N, M);        
+    } else {
+        cout << "Wrong choice while starting..." << endl;
     }
-    
+        
     int count = world_size - 1;
     int integral = N / count;
     int last = N / count + N % count;
+    cout << "integral: " << integral << endl;
+    cout << "last: " << last << endl;
     
     if (N < count) { 
         cerr << "Too many processes:)" << endl;
         exit(0);
     }
     
-    for (int i = 0; i < count; ++i) {
-        MPI_Bcast(&N, 1, MPI_INT, 0, intercomm);
-        MPI_Bcast(&M, 1, MPI_INT, 0, intercomm);
-    }
     
-    MPI_Send(&(init_table[0][0]), (integral + 1) * M, MPI_INT, 0, data_tag, intercomm);
-    MPI_Send(&(init_table[count - last - 1][0]), (last + 1) * M, MPI_INT, 0, data_tag, intercomm);
+    MPI_Bcast(&M, 1, MPI_INT, MPI_ROOT, intercomm);
     
+    //processes 1 .. count - 2
+    int work_N;
     for (int i = 1; i < count - 1; ++i) {
-        MPI_Send(&(init_table[(i - 1) * integral][0]), (integral + 2) * M, MPI_INT, 0, data_tag, intercomm);
+        work_N = integral + 2;
+        MPI_Send(&work_N, 1, MPI_INT, i, data_tag, intercomm);
+        MPI_Send(&(init_table[(i - 1) * integral][0]), work_N * M, MPI_INT, i, data_tag, intercomm);
     }
+
+    //process 0
+    work_N = integral + 1;
+    MPI_Send(&work_N, 1, MPI_INT, 0, data_tag, intercomm);
+    MPI_Send(&(init_table[0][0]), work_N * M, MPI_INT, 0, data_tag, intercomm);
+    
+    //process count - 1
+    work_N = last + 1;
+    MPI_Send(&work_N, 1, MPI_INT, count - 1, data_tag, intercomm);
+    MPI_Send(&(init_table[N - last - 1][0]), work_N * M, MPI_INT, count - 1, data_tag, intercomm);
+    
     
 }

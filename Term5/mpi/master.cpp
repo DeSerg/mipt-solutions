@@ -110,17 +110,19 @@ int main(int argc, char **argv)
     
     MPI_Comm_create(MPI_COMM_WORLD, work_group, &work_comm);
     
-    MPI_Comm_size(work_comm, &work_size);
-    MPI_Comm_rank(work_comm, &work_rank);
+    if (world_rank != 0) {
+        MPI_Comm_size(work_comm, &work_size);
+        MPI_Comm_rank(work_comm, &work_rank);
+    }
     
     if (world_rank == 0) {
         
-        cout << "HELLO!" << endl;
+        cerr << "HELLO!" << endl;
         startMethod();
         helpMethod();
         
         while (status != on_quit) {
-            cout << "\n\n";
+            cerr << "\n\n";
             readCommand();
         }
         
@@ -130,7 +132,7 @@ int main(int argc, char **argv)
         work();
     }
 
-    delete [] init_table;
+    deallocArray(init_table, N);
     MPI_Finalize();
     
     return 0;
