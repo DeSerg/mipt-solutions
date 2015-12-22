@@ -3,7 +3,6 @@
 
 #endif // SUPPORT
 
-
 #include <string>
 #include <locale> 
 #include <iostream>
@@ -18,10 +17,15 @@
 #include <fstream>
 #include <sstream>
 #include <unistd.h>
-#include <mpi.h>
+#include <mpi/mpi.h>
 
 #define live 0
 #define dead 1
+
+#define data_tag 0
+#define run_tag 10
+#define stop_tag 20
+#define quit_tag 30
 
 using namespace std;
 
@@ -33,7 +37,7 @@ struct Data {
 };
 
 enum Status {
-    running, stopped, on_quit
+    before_run, running, stopped, on_quit
 };
 
 string toLower(string str);

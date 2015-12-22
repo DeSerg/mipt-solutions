@@ -7,9 +7,12 @@ Status status;
 
 MPI_Comm work_comm;
 MPI_Comm master_comm;
+MPI_Comm intercomm;
+
+int work_rank, work_size;
+int world_rank, world_size;
 
 int **cur_table;
-int **cur_table_new;
 int **init_table;
 
 void readCommand() {
@@ -52,81 +55,84 @@ int main(int argc, char **argv)
 {
     MPI_Init(&argc, &argv);
     srand(time(NULL));
-    status = stopped;    
+    status = before_run;
     
-    int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-    
-    int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    
+    if (world_size < 2) {
+        cerr << "Too few processes" << endl;
+        exit(0);
+    }
+    
+    int color;
+    if (world_rank == 0) {
+        color = 0;
+    } else {
+        color = 1;
+    }
+    
+    MPI_Comm newcomm;
+    MPI_Comm world_dupcom;
+    
+    MPI_Comm_dup(MPI_COMM_WORLD, &world_dupcom);
+    MPI_Comm_split(MPI_COMM_WORLD, color, 1, &newcomm);
+    
+    if (world_rank == 0) {
+        MPI_Intercomm_create(newcomm, 0, world_dupcom, 1, 111, &intercomm);
+    } else {
+        MPI_Intercomm_create(newcomm, 0, world_dupcom, 0, 111, &intercomm);
+    }
+    
+    
+    /*
+    if (world_rank == 0) {
+        int remote_size;
+        MPI_Comm_remote_size(intercomm, &remote_size);
+        cout << "master: remote group size is " << remote_size << endl;
+        int k = 0;
+        MPI_Bcast(&k, 1, MPI_INT, MPI_ROOT, intercomm);
+    } else {
+//        MPI_Barrier(newintercomm);
+        
+        int k;
+        MPI_Bcast(&k, 1, MPI_INT, 0, intercomm);
+        cout << "MES GOT!" << endl;
+    }
+*/
     
     MPI_Group work_group_all;
     MPI_Group work_group;
     MPI_Comm_group(MPI_COMM_WORLD, &work_group_all);
     
-    int n[1] = {0};
+    const int n[1] = {0};
     MPI_Group_excl(work_group_all, 1, n, &work_group);
-    MPI_Comm_create(MPI_COMM_WORLD, work_group, work_comm);
+    
+    MPI_Comm_create(MPI_COMM_WORLD, work_group, &work_comm);
+    
+    MPI_Comm_size(work_comm, &work_size);
+    MPI_Comm_rank(work_comm, &work_rank);
     
     if (world_rank == 0) {
-//        MPI_Comm_split(MPI_COMM_WORLD, 0, world_rank, &master_comm);        
         
-//        int loc_rank;
-//        MPI_Comm_rank(master_comm, &loc_rank);
+        cout << "HELLO!" << endl;
+        startMethod();
+        helpMethod();
         
-//        int loc_size;
-//        MPI_Comm_size(master_comm, &loc_size);
-        
-//        cout << "MASTER: Rank/size: " << loc_rank << "/" << loc_size << endl;
-        
-//        sleep(5);
-        for (int i = 1; i < world_size; ++i) {
-            MPI_Send(&i, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+        while (status != on_quit) {
+            cout << "\n\n";
+            readCommand();
         }
         
-//        startMethod();
+        cout << "Good bye.." << endl;
         
     } else {
-//        MPI_Comm_split(MPI_COMM_WORLD, 1, world_rank, &work_comm);
-        
-//        int loc_rank;
-//        MPI_Comm_rank(work_comm, &loc_rank);
-        
-//        int loc_size;
-//        MPI_Comm_size(work_comm, &loc_size);
-        
-//        cout << "WORKER: Rank/size: " << loc_rank << "/" << loc_size << endl;
-        int work_rank;
-        MPI_Comm_rank(work_comm, &work_comm);
-        
-        int work_size;
-        MPI_Comm_size(work_comm, &work_size);
-        
-        cout << "Hello from work_comm, I am " << work_rank << " of " << work_size << endl;
-        
-        int ready = 0;
-        MPI_Recv(&ready, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-              
-        cout << "Worker #" << world_rank << ": I AM READY! (" << ready << ")" << endl;
-//        work();
-        
+        work();
     }
-    
-    
-//    test();
-/*    
-    cout << "HELLO!" << endl;
-    startMethod();
-    helpMethod();
-    
-    while (status != on_quit) {
-        cout << "\n\n";
-        readCommand();
-    }
-    
-    cout << "Good bye.." << endl;
-  */  
+
+    delete [] init_table;
     MPI_Finalize();
+    
     return 0;
 }
 

@@ -1,14 +1,16 @@
 #include "support.h"
 
-extern int K, N, M;
+extern int N, M;
 extern Status status;
 
 extern MPI_Comm work_comm;
 extern MPI_Comm master_comm;
+extern MPI_Comm intercomm;
 
 extern int **cur_table;
-extern int **cur_table_new;
 extern int **init_table;
+
+extern int world_rank, world_size;
 
 const double probability = 0.5;
 
@@ -59,6 +61,7 @@ void getTable() {
     cout << "Please, enter table's width:" << endl;
     cin >> M;
     
+    init_table = allocArray(N, M);
     fillTable(N, M);
     
 }
@@ -70,21 +73,24 @@ void trim(string &str) {
     trimmer >> str;
 }
 
+
 int getCSVTable() {
     
     ifstream file(filename);
     string line;
     string token;
     
+    vector<vector<int>> inp_vector;
+    
     if (file.is_open()) {
         
         
-        init_table.clear();
+        inp_vector.clear();
         int width = 0;
         
         while (getline(file,line)) {
             
-            init_table.push_back(vector<Cell>());
+            inp_vector.push_back(vector<Cell>());
             
             istringstream ss(line);
             
@@ -96,10 +102,10 @@ int getCSVTable() {
                 } else {
                     cell = dead;
                 }
-                init_table[init_table.size() - 1].push_back(cell);
+                inp_vector[init_table.size() - 1].push_back(cell);
             }
             
-            int cur_width = init_table[init_table.size() - 1].size();
+            int cur_width = inp_vector[inp_vector.size() - 1].size();
             if (width == 0) {
                 width = cur_width;
                 M = width;
@@ -110,8 +116,17 @@ int getCSVTable() {
             
         }
         
-        N = init_table.size();
+        N = inp_vector.size();
         file.close();
+        
+        init_table = allocArray(N, M);
+        for (int i = 0; i < N; ++i) {
+            for (int j = 0; j < M; ++j) {
+                
+                init_table[i][j] = inp_vector[i][j];
+            }
+            
+        }
         
         return 0;
     } else {
@@ -119,28 +134,45 @@ int getCSVTable() {
         cout << "Table will be generated randomly" << endl;
         return 1;
     }
-    
-    
-    
-    
+       
 }
 
+
 void startMethod() {
-    
-    
+
 //        Старт с заданным начальным распределением (см далее) и количеством
 //        потоков K
 //        Начальное распределение может быть задано в двух вариантах (нужно
 //        реализовать оба):
 //        а)файл в формате CSV (https://ru.wikipedia.org/wiki/CSV)
 //        б)задаются лишь размеры NxM, поле генерируется случайным образом
+    int choice = getInitType();
     
-    int size;
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    if (choice == 1) {
+        getCSVTable();
+    } else {
+        getTable();
+    }
     
-    int ready = 1;
-    for (int i = 1; i <= size; ++i) {
-        MPI_Send(&ready, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+    int count = world_size - 1;
+    int integral = N / count;
+    int last = N / count + N % count;
+    
+    if (N < count) { 
+        cerr << "Too many processes:)" << endl;
+        exit(0);
+    }
+    
+    for (int i = 0; i < count; ++i) {
+        MPI_Bcast(&N, 1, MPI_INT, 0, intercomm);
+        MPI_Bcast(&M, 1, MPI_INT, 0, intercomm);
+    }
+    
+    MPI_Send(&(init_table[0][0]), (integral + 1) * M, MPI_INT, 0, data_tag, intercomm);
+    MPI_Send(&(init_table[count - last - 1][0]), (last + 1) * M, MPI_INT, 0, data_tag, intercomm);
+    
+    for (int i = 1; i < count - 1; ++i) {
+        MPI_Send(&(init_table[(i - 1) * integral][0]), (integral + 2) * M, MPI_INT, 0, data_tag, intercomm);
     }
     
 }
