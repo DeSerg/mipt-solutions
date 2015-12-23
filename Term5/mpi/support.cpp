@@ -14,19 +14,30 @@ string toLower(string str) {
 }
 
 
-void drawTable(int **table, int N, int M) {
+void drawTable(Field &table, bool shortened) {
+       
+    int first_line, last_line;
+
+    if (shortened) {
+        first_line = 1;
+        last_line = table.n() - 1;
+    } else {
+        first_line = 0;
+        last_line = table.n();
+    }
     
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < M; j++) {
+    for (int i = first_line; i < last_line; i++) {
+        for (int j = 0; j < table.m(); j++) {
             if (table[i][j] == live) {
-                cout << "+";
+                cerr << "+";
             } else {
-                cout << ".";
+                cerr << ".";
             }
         }
-        cout << endl;               
+        cerr << endl;               
     }
-    cout << endl;
+    cerr << endl;
+    
 }
 
 int getCellNum(int i, int j) {
@@ -40,38 +51,31 @@ void getCellCoords(int num, int &i, int &j) {
     
 }
 
-int **allocArray(int N, int M) {
 
-    int **array;
-    
-    if ((array = (int **) malloc(N * sizeof(int*))) == NULL) {
-        cerr << "err" << endl;
-        exit(1);
+Field::Field() : data(NULL) {}
+
+Field::Field(int n, int m) :
+    _n(n), _m(m), data(new char[n * m]) {}
+
+Field::Field(const Field &other) :
+    _n(other._n), _m(other._m), data(new char[_n * _m]) {
+    for (int i = 0; i < _n*_m; ++i) {
+        data[i] = other.data[i];
     }
-    
-    for (int i = 0; i < N; ++i) {
-      if ((array[i] = (int *) malloc(M * sizeof(int))) == NULL ) {
-          cerr << "err" << endl;
-          exit(1);
-      }    
-    }
-    
-    return array;
 }
 
-void deallocArray(int **array, int N) {
-    
-    for(int i = 0; i < N; ++i) {
-        free(array[i]);
-    }
-    
-    free(array);
+Field::~Field() { delete[] data; }
+
+Field& Field::operator=(Field other) {
+    swap(*this, other);
+    return *this;
 }
 
-void copyArray(int **source, int **dest, int N, int M) {
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < M; ++j) {
-            dest[i][j] = source[i][j];
-        }
-    }
+void swap(Field &larg, Field &rarg) {
+    using std::swap;
+    swap(larg._n, rarg._n);
+    swap(larg._m, rarg._m);
+    swap(larg.data, rarg.data);
 }
+
+char *Field::operator[](const int i) { return &data[i * _m]; }

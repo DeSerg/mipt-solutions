@@ -7,8 +7,7 @@ extern MPI_Comm work_comm;
 extern MPI_Comm master_comm;
 extern MPI_Comm intercomm;
 
-extern int **cur_table;
-extern int **init_table;
+extern Field init_table;
 
 extern int world_rank, world_size;
 extern int work_rank, work_size;
@@ -18,13 +17,13 @@ void statusMethod() {
 //        после старта -  отображение начального распределения)
     
     if (status == before_run) {
-        cout << "Game hasn't started yet" << endl;
+        cerr << "Game hasn't started yet" << endl;
     } else if (status == running) {
-        cout << "Game is running" << endl;
+        cerr << "Game is running" << endl;
     } else if (status == stopped) {
-        cout << "Game is stopped" << endl;
+        cerr << "Game is stopped" << endl;
     }
     
-    drawTable(init_table, N, M);
+    drawTable(init_table);
     
 }

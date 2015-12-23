@@ -7,7 +7,7 @@ extern MPI_Comm work_comm;
 extern MPI_Comm master_comm;
 extern MPI_Comm intercomm;
 
-extern int **init_table;
+extern Field init_table;
 
 extern int world_rank, world_size;
 
@@ -59,7 +59,7 @@ void getTable() {
     cout << "Please, enter table's width:" << endl;
     cin >> M;
     
-    init_table = allocArray(N, M);
+    init_table = Field(N, M);
     fillTable(N, M);
     
 }
@@ -117,7 +117,7 @@ int getCSVTable() {
         N = inp_vector.size();
         file.close();
         
-        init_table = allocArray(N, M);
+        init_table = Field(N, M);
         for (int i = 0; i < N; ++i) {
             for (int j = 0; j < M; ++j) {
                 
@@ -152,22 +152,22 @@ void startMethod() {
         }
         
         cout << "Here's your initial table:" << endl;
-        drawTable(init_table, N, M);        
+        drawTable(init_table);        
         
     } else if (choice == 2) {
         
         getTable();
-        cout << "Here's your initial table:" << endl;
-        drawTable(init_table, N, M);        
+        cerr << "Here's your initial table:" << endl;
+        drawTable(init_table);        
     } else {
-        cout << "Wrong choice while starting..." << endl;
+        cerr << "Wrong choice while starting..." << endl;
     }
         
     int count = world_size - 1;
     int integral = N / count;
     int last = N / count + N % count;
-    cout << "integral: " << integral << endl;
-    cout << "last: " << last << endl;
+//    cout << "integral: " << integral << endl;
+//    cout << "last: " << last << endl;
     
     if (N < count) { 
         cerr << "Too many processes:)" << endl;
@@ -182,18 +182,17 @@ void startMethod() {
     for (int i = 1; i < count - 1; ++i) {
         work_N = integral + 2;
         MPI_Send(&work_N, 1, MPI_INT, i, data_tag, intercomm);
-        MPI_Send(&(init_table[(i - 1) * integral][0]), work_N * M, MPI_INT, i, data_tag, intercomm);
+        MPI_Send(init_table[(i - 1) * integral], work_N * M, MPI_INT, i, data_tag, intercomm);
     }
 
     //process 0
     work_N = integral + 1;
     MPI_Send(&work_N, 1, MPI_INT, 0, data_tag, intercomm);
-    MPI_Send(&(init_table[0][0]), work_N * M, MPI_INT, 0, data_tag, intercomm);
+    MPI_Send(init_table[0], work_N * M, MPI_INT, 0, data_tag, intercomm);
     
     //process count - 1
     work_N = last + 1;
     MPI_Send(&work_N, 1, MPI_INT, count - 1, data_tag, intercomm);
-    MPI_Send(&(init_table[N - last - 1][0]), work_N * M, MPI_INT, count - 1, data_tag, intercomm);
-    
+    MPI_Send(init_table[N - last - 1], work_N * M, MPI_INT, count - 1, data_tag, intercomm);
     
 }
