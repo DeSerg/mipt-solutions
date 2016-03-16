@@ -13,13 +13,14 @@ bool CEllipseWindow::RegisterClass() {
 	wcex.lpfnWndProc = CEllipseWindow::windowProc;
 	wcex.hInstance = GetModuleHandle(0);
 	wcex.lpszClassName = L"EllipseWindow";
+	wcex.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
 	return (::RegisterClassEx(&wcex) != 0);
 
 }
 
 bool CEllipseWindow::Create(HWND parentHandle) {
 
-	CreateWindowEx(0, L"EllipseWindow", L"ChildWindow", WS_CHILD,
+	CreateWindowEx(0, L"EllipseWindow", L"ChildWindow", WS_CHILD | WS_BORDER,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, parentHandle, 0, GetModuleHandle(0), this);
 	return (handle != NULL);
 
@@ -27,6 +28,7 @@ bool CEllipseWindow::Create(HWND parentHandle) {
 
 void CEllipseWindow::Show(int cmdShow) {
 	ShowWindow(handle, cmdShow);
+	UpdateWindow(handle);
 }
 
 HWND CEllipseWindow::getHandle() {
@@ -39,11 +41,12 @@ void CEllipseWindow::OnNCCreate(HWND _handle) {
 
 void CEllipseWindow::OnCreate() {
 
-	xEllipse = 100;
-	yEllipse = 100;
-	xEllipseOld = 100;
-	yEllipseOld = 100;
-	//int result = SetTimer(handle, TimerID, 1, reinterpret_cast<TIMERPROC> (CEllipseWindow::windowProc));
+	long width;
+	long height;
+	getClientRect(width, height);
+	xEllipseOld = xEllipse = 0;
+	yEllipseOld = yEllipse = 0;
+	//int result = SetTimer(handle, TimerID, TimeDelta, reinterpret_cast<TIMERPROC> (CEllipseWindow::windowProc));
 }
 
 void CEllipseWindow::OnDestroy() {
@@ -61,10 +64,10 @@ void CEllipseWindow::OnTimer() {
 
 	xEllipseOld = xEllipse;
 	yEllipseOld = yEllipse;
-	xEllipse = (xEllipse + Delta) % width;
-	yEllipse = (yEllipse + Delta) % height;
+	xEllipse = (xEllipse + DistanceDelta) % width;
+	yEllipse = (yEllipse + DistanceDelta) % height;
 
-	//InvalidateRect(handle, NULL, TRUE);
+	InvalidateRect(handle, NULL, TRUE);
 }
 
 void CEllipseWindow::OnPaint() {
@@ -125,7 +128,7 @@ LRESULT __stdcall CEllipseWindow::windowProc(HWND handle, UINT message, WPARAM w
 	case WM_NCCREATE: {
 		window = reinterpret_cast<CEllipseWindow*>(((CREATESTRUCT*)lParam)->lpCreateParams);
 		SetLastError(0);
-        SetWindowLongPtr(handle, GWLP_USERDATA, (LONG)window);
+        SetWindowLongPtr(handle, GWLP_USERDATA, reinterpret_cast<LONG>(window));
         if( GetLastError() != 0 ) {
             return GetLastError();
         }

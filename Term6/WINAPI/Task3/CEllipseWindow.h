@@ -7,8 +7,7 @@
 #include <iostream>
 #include <string>
 #include <tchar.h>
-
-using namespace std;
+#include <array>
 
 class CEllipseWindow {
 public:
@@ -41,7 +40,8 @@ private:
 	int xEllipse;
 	int yEllipse;
 
-	static const int Delta = 1;
+	static const int DistanceDelta = 1;
+	static const int TimeDelta = 20;
 	static const int Radius = 30;
 	static const int TimerID = 10;
 

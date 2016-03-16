@@ -13,13 +13,14 @@ bool COverlappedWindow::RegisterClass() {
 	wcex.lpfnWndProc = COverlappedWindow::windowProc;
 	wcex.hInstance = GetModuleHandle(0);
 	wcex.lpszClassName = L"OverlappedWindow";
+	wcex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	return (::RegisterClassEx(&wcex) != 0);
 
 }
 
 bool COverlappedWindow::Create() {
 
-	CreateWindowEx(0, L"OverlappedWindow", L"My Window", WS_OVERLAPPED,
+	CreateWindowEx(0, L"OverlappedWindow", L"My Window", WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 0, 0, GetModuleHandle(0), this);
 	return (handle != NULL);
 
@@ -28,7 +29,9 @@ bool COverlappedWindow::Create() {
 void COverlappedWindow::Show(int cmdShow) {
 
 	ShowWindow(handle, cmdShow);
-	for (int i = 0; i < 4; i++) {
+	UpdateWindow(handle);
+
+	for (int i = 0; i < childWindows.size(); i++) {
 		childWindows[i].Show(cmdShow);
 	}
 
@@ -41,7 +44,7 @@ void COverlappedWindow::OnNCCreate(HWND _handle) {
 void COverlappedWindow::OnCreate() {
 
 	CEllipseWindow::RegisterClass();
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < childWindows.size(); i++) {
 		childWindows[i].Create(handle);
 	}
 
@@ -59,8 +62,8 @@ void COverlappedWindow::OnSize() {
 	int childHeight = clientHeight / 2;
 	SetWindowPos(childWindows[0].getHandle(), HWND_TOP, 0, 0, childWidth, childHeight, 0);
 	SetWindowPos(childWindows[1].getHandle(), HWND_TOP, childWidth, 0, childWidth, childHeight, 0);
-	SetWindowPos(childWindows[2].getHandle(), HWND_TOP, 0, childHeight, childWidth, childHeight, 0);
-	SetWindowPos(childWindows[3].getHandle(), HWND_TOP, childWidth, childHeight, childWidth, childHeight, 0);
+	/*SetWindowPos(childWindows[2].getHandle(), HWND_TOP, 0, childHeight, childWidth, childHeight, 0);
+	SetWindowPos(childWindows[3].getHandle(), HWND_TOP, childWidth, childHeight, childWidth, childHeight, 0);*/
 
 }
 
@@ -81,7 +84,7 @@ LRESULT __stdcall COverlappedWindow::windowProc(HWND handle, UINT message, WPARA
 	case WM_NCCREATE: {
 		window = reinterpret_cast<COverlappedWindow*>(((CREATESTRUCT*)lParam)->lpCreateParams);
 		SetLastError(0);
-        SetWindowLongPtr(handle, GWLP_USERDATA, (LONG)window);
+		SetWindowLongPtr(handle, GWLP_USERDATA, reinterpret_cast<LONG>(window));
         if( GetLastError() != 0 ) {
             return GetLastError();
         }
@@ -97,7 +100,7 @@ LRESULT __stdcall COverlappedWindow::windowProc(HWND handle, UINT message, WPARA
 		return 0;
 	}
 	case WM_SIZE: {
-		//window->OnSize();
+		window->OnSize();
 		return DefWindowProc(handle, message, wParam, lParam);;
 	}
 	default: {
