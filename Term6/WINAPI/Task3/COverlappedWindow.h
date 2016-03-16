@@ -32,18 +32,11 @@ protected:
 private:
 	
 	HWND handle;
-	int xEllipseOld;
-	int yEllipseOld;
-	int xEllipse;
-	int yEllipse;
 
 	std::array<CEllipseWindow, 4> childWindows;
 
-	static const int Delta = 1;
-	static const int Radius = 30;
-	static const int TimerID = 10;
-
 	void getClientRect(long &width, long &height);
+	void setChildrenPosition();
 
 	static LRESULT __stdcall windowProc(HWND handle, UINT message, WPARAM wParam, LPARAM lParam);
 };

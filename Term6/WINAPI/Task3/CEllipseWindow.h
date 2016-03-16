@@ -8,6 +8,7 @@
 #include <string>
 #include <tchar.h>
 #include <array>
+#include <cmath>
 
 class CEllipseWindow {
 public:
@@ -18,7 +19,7 @@ public:
 	static bool RegisterClass();
 
 	// Создать экземпляр окна
-	bool Create(HWND parentHandle);
+	bool Create(int x, int y, int width, int height, HWND parentHandle);
 
 	// Показать окно
 	void Show(int cmdShow);
@@ -31,6 +32,7 @@ protected:
 	void OnDestroy();
 	void OnTimer();
 	void OnPaint();
+	void OnLButtonDown();
 
 private:
 	
@@ -40,14 +42,18 @@ private:
 	int xEllipse;
 	int yEllipse;
 	int TimerID;
+	int XDelta[4];
+	int YDelta[4];
+	int TimeDelta;
+	int direction;
 
-	static const int DistanceDelta = 1;
-	static const int TimeDelta = 20;
 	static const int Radius = 30;
+	static const int epsilon = 1;
 	
 
-	void drawEllipse(HDC dc, int x, int y, COLORREF fillColor, COLORREF outlineColor);
+	void drawEllipse(HDC dc, int x, int y, int radius, COLORREF fillColor, COLORREF outlineColor);
 	void getClientRect(long &width, long &height);
+	void chooseDirection();
 
 	static LRESULT __stdcall windowProc(HWND handle, UINT message, WPARAM wParam, LPARAM lParam);
 };

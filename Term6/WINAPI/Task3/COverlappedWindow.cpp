@@ -44,10 +44,23 @@ void COverlappedWindow::OnNCCreate(HWND _handle) {
 void COverlappedWindow::OnCreate() {
 
 	CEllipseWindow::RegisterClass();
-	for (int i = 0; i < childWindows.size(); i++) {
-		childWindows[i].Create(handle);
-	}
 
+	RECT clientRect;
+	::GetClientRect(handle, &clientRect);	
+	long clientWidth, clientHeight;
+	
+	int left = clientRect.left;
+	int top = clientRect.top;
+
+	int childWidth = (clientRect.right - clientRect.left) / 2;
+	int childHeight = (clientRect.bottom - clientRect.top) / 2;
+	int childMidX = (clientRect.left + clientRect.right) / 2;
+	int childMidY = (clientRect.top + clientRect.bottom) / 2;
+
+	childWindows[0].Create(clientRect.left, clientRect.top, childWidth, childHeight, handle);
+	childWindows[1].Create(childMidX, clientRect.top, childWidth, childHeight, handle);
+	childWindows[2].Create(clientRect.left, childMidY, childWidth, childHeight, handle);
+	childWindows[3].Create(childMidX, childMidY, childWidth, childHeight, handle);
 }
 
 void COverlappedWindow::OnDestroy() {
@@ -72,7 +85,7 @@ void COverlappedWindow::OnSize() {
 	SetWindowPos(childWindows[1].getHandle(), HWND_TOP, childMidX, clientRect.top, childWidth, childHeight, 0);
 	SetWindowPos(childWindows[2].getHandle(), HWND_TOP, clientRect.left, childMidY, childWidth, childHeight, 0);
 	SetWindowPos(childWindows[3].getHandle(), HWND_TOP, childMidX, childMidY, childWidth, childHeight, 0);
-
+	
 }
 
 void COverlappedWindow::getClientRect(long &width, long &height) {
