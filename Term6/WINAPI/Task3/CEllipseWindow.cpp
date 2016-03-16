@@ -46,12 +46,14 @@ void CEllipseWindow::OnCreate() {
 	getClientRect(width, height);
 	xEllipseOld = xEllipse = 0;
 	yEllipseOld = yEllipse = 0;
-	//int result = SetTimer(handle, TimerID, TimeDelta, reinterpret_cast<TIMERPROC> (CEllipseWindow::windowProc));
+	TimerID = 1;
+
+	int result = SetTimer(handle, TimerID, TimeDelta, reinterpret_cast<TIMERPROC> (CEllipseWindow::windowProc));
 }
 
 void CEllipseWindow::OnDestroy() {
 
-	//KillTimer(handle, TimerID);
+	KillTimer(handle, TimerID);
 	PostQuitMessage(0);
 
 }
@@ -77,15 +79,13 @@ void CEllipseWindow::OnPaint() {
 	long width = rcClient.right;
 	long height = rcClient.bottom;
 
-	getClientRect(width, height);
-
 	PAINTSTRUCT ps;
 	HDC hdc = BeginPaint(handle, &ps);
 	HDC memHdc = CreateCompatibleDC(hdc);
 	HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
 	SelectObject(memHdc, hBitmap);
 
-	//drawEllipse(memHdc, xEllipseOld, yEllipseOld, RGB(255, 255, 255), RGB(255, 255, 255));
+	drawEllipse(memHdc, xEllipseOld, yEllipseOld, RGB(255, 255, 255), RGB(255, 255, 255));
 	FillRect(memHdc, &rcClient, reinterpret_cast<HBRUSH>(GetStockObject(GRAY_BRUSH)));
 	drawEllipse(memHdc, xEllipse, yEllipse, RGB(0, 0, 0), RGB(255, 25, 0));
 	
@@ -149,7 +149,7 @@ LRESULT __stdcall CEllipseWindow::windowProc(HWND handle, UINT message, WPARAM w
 	}
 	case WM_PAINT: {
 		window->OnPaint();
-		return 0;
+		return DefWindowProc(handle, message, wParam, lParam);
 	}
 	default: {
 		return DefWindowProc(handle, message, wParam, lParam);

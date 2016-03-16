@@ -56,14 +56,22 @@ void COverlappedWindow::OnDestroy() {
 
 void COverlappedWindow::OnSize() {
 
+	RECT clientRect;
+	::GetClientRect(handle, &clientRect);	
 	long clientWidth, clientHeight;
-	getClientRect(clientWidth, clientHeight);
-	int childWidth = clientWidth / 2;
-	int childHeight = clientHeight / 2;
-	SetWindowPos(childWindows[0].getHandle(), HWND_TOP, 0, 0, childWidth, childHeight, 0);
-	SetWindowPos(childWindows[1].getHandle(), HWND_TOP, childWidth, 0, childWidth, childHeight, 0);
-	/*SetWindowPos(childWindows[2].getHandle(), HWND_TOP, 0, childHeight, childWidth, childHeight, 0);
-	SetWindowPos(childWindows[3].getHandle(), HWND_TOP, childWidth, childHeight, childWidth, childHeight, 0);*/
+	
+	int left = clientRect.left;
+	int top = clientRect.top;
+
+	int childWidth = (clientRect.right - clientRect.left) / 2;
+	int childHeight = (clientRect.bottom - clientRect.top) / 2;
+	int childMidX = (clientRect.left + clientRect.right) / 2;
+	int childMidY = (clientRect.top + clientRect.bottom) / 2;
+
+	SetWindowPos(childWindows[0].getHandle(), HWND_TOP, clientRect.left, clientRect.top, childWidth, childHeight, 0);
+	SetWindowPos(childWindows[1].getHandle(), HWND_TOP, childMidX, clientRect.top, childWidth, childHeight, 0);
+	SetWindowPos(childWindows[2].getHandle(), HWND_TOP, clientRect.left, childMidY, childWidth, childHeight, 0);
+	SetWindowPos(childWindows[3].getHandle(), HWND_TOP, childMidX, childMidY, childWidth, childHeight, 0);
 
 }
 

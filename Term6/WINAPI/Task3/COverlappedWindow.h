@@ -37,7 +37,7 @@ private:
 	int xEllipse;
 	int yEllipse;
 
-	std::array<CEllipseWindow, 2> childWindows;
+	std::array<CEllipseWindow, 4> childWindows;
 
 	static const int Delta = 1;
 	static const int Radius = 30;

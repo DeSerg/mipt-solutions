@@ -39,11 +39,12 @@ private:
 	int yEllipseOld;
 	int xEllipse;
 	int yEllipse;
+	int TimerID;
 
 	static const int DistanceDelta = 1;
 	static const int TimeDelta = 20;
 	static const int Radius = 30;
-	static const int TimerID = 10;
+	
 
 	void drawEllipse(HDC dc, int x, int y, COLORREF fillColor, COLORREF outlineColor);
 	void getClientRect(long &width, long &height);
