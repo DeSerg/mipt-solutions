@@ -48,6 +48,8 @@ private:
 
 	void getClientRect(long &width, long &height);
 	void setChildrenPosition();
+	void saveText();
+	bool writeToFile(LPCTSTR fileName, TCHAR *text, DWORD textLen);
 
 	static LRESULT __stdcall windowProc(HWND handle, UINT message, WPARAM wParam, LPARAM lParam);
 };

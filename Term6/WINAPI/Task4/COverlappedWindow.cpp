@@ -58,7 +58,13 @@ void COverlappedWindow::OnCreate() {
 
 void COverlappedWindow::OnClose() {
 	if (textChanged) {
-		MessageBox(handle, L"Would you like save your text to file?", L"My Window", MB_YESNOCANCEL);
+		int msBoxBtn = MessageBox(handle, L"Would you like save your text to file?", L"My Window", MB_YESNOCANCEL);
+		switch (msBoxBtn)
+		{
+		case IDYES:
+			saveText();
+			break;
+		}
 	}
 }
 
@@ -92,6 +98,55 @@ void COverlappedWindow::getClientRect(long &width, long &height) {
 	GetClientRect(handle, &rcClient);
 	width = rcClient.right;
 	height = rcClient.bottom;
+}
+
+void COverlappedWindow::saveText() {
+	DWORD textLen = SendMessage(hwndEdit, WM_GETTEXTLENGTH, 0, 0);
+	if (textLen == 0) {
+		return;
+	}
+
+	DWORD bufferLen = (textLen + 1) * sizeof(TCHAR);
+	TCHAR *buffer = new TCHAR[bufferLen];
+	SendMessage(hwndEdit, WM_GETTEXT, (WPARAM)bufferLen, (LPARAM) buffer);
+
+	OPENFILENAME ofn;
+
+    char szFileName[MAX_PATH] = "";
+
+    ZeroMemory(&ofn, sizeof(ofn));
+
+    ofn.lStructSize = sizeof(ofn); 
+	ofn.hwndOwner = handle;
+    ofn.lpstrFilter = (LPCWSTR)L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+    ofn.lpstrFile = (LPWSTR)szFileName;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.lpstrDefExt = (LPCWSTR)L"txt";
+
+    GetSaveFileName(&ofn);
+	bool writeResult = writeToFile(ofn.lpstrFile, buffer, bufferLen);
+
+	delete[] buffer;
+}
+
+bool COverlappedWindow::writeToFile(LPCTSTR fileName, TCHAR *text, DWORD textLen) {
+	
+	HANDLE hFile;
+    BOOL bSuccess = FALSE;
+
+	hFile = CreateFile(fileName, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if(hFile != INVALID_HANDLE_VALUE) {
+        if(sizeof(text) > 0) {
+			DWORD writtenBytes;
+			if(WriteFile(hFile, text, textLen, &writtenBytes, NULL))
+                        bSuccess = TRUE;
+        }
+		CloseHandle(hFile);
+    }
+    
+    return bSuccess;
+
 }
 
 LRESULT __stdcall COverlappedWindow::windowProc(HWND handle, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -131,9 +186,10 @@ LRESULT __stdcall COverlappedWindow::windowProc(HWND handle, UINT message, WPARA
 		}
 	}
 	case WM_SETFOCUS: 
-            SetFocus(window->hwndEdit); 
-            return 0; 
-
+        SetFocus(window->hwndEdit); 
+        return 0; 
+	case WM_GETTEXTLENGTH:
+		
 	default: {
 		return DefWindowProc(handle, message, wParam, lParam);
 	}

@@ -1,4 +1,3 @@
-#include "CEllipseWindow.h"
 #include "COverlappedWindow.h"
 
 #include <exception>
