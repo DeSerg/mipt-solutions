@@ -30,11 +30,16 @@ protected:
 	void OnTimer();
 	void OnPaint();
 	void OnSetCursor();
+	HBRUSH OnCtlColorEdit(HDC dc);
+
+
 	void OnInitDialog(HWND dialogHandle);
 	void OnHScroll();
+	void OnSettingsBackground(HWND dialogHandle);
+	void OnSettingsFont(HWND dialogHandle);
 	void OnSettingsOK(HWND dialogHandle);
 	void OnSettingsCansel(HWND dialogHandle);
-
+	void OnSettingsPreview(HWND dialogHandle);
 
 
 private:

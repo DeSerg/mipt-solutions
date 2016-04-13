@@ -9,10 +9,12 @@ public:
 	Settings(const Settings &dialog);
 
 	void setBackgroundBrush(HBRUSH backgroundBrush);
+	HBRUSH getBackgroundBrush();
 	void setFont(HFONT font);
 	void setFontSize(int fontSize);
 	int getFontSize();
 	void setTransparency(int transparency);
+	int getTransparency();
 
 	void apply();
 

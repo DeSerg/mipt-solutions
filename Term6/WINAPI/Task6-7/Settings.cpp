@@ -5,13 +5,24 @@ Settings::Settings() {}
 Settings::Settings(HWND editControl, HWND owner) {
 	this->editControl = editControl;
 	this->owner = owner;
+
+	BYTE byteTrans;
+	GetLayeredWindowAttributes(owner, NULL, &byteTrans, NULL);
+	transparency = int(byteTrans);
+
 	backgroundBrush = CreateSolidBrush(RGB(255, 255, 255));
 	
-	font = reinterpret_cast<HFONT>(SendMessage(editControl, WM_GETFONT, 0, 0));
+
+	HFONT originFont = reinterpret_cast<HFONT>(SendMessage(editControl, WM_GETFONT, 0, 0));
+	LOGFONT lf;
+	GetObject(originFont, sizeof(LOGFONT), &lf);
+	font = CreateFontIndirect(&lf);
+
+
 	if (font == NULL) {
 		font = reinterpret_cast<HFONT>(GetStockObject(SYSTEM_FONT));
 	}
-	transparency = 0;
+	
 }
 
 Settings::Settings(const Settings &settings) {
@@ -26,6 +37,10 @@ void Settings::setBackgroundBrush(HBRUSH backgroundBrush) {
 		DeleteObject(this->backgroundBrush);
 	}
 	this->backgroundBrush = backgroundBrush;
+}
+
+HBRUSH Settings::getBackgroundBrush() {
+	return backgroundBrush;
 }
 
 void Settings::setFont(HFONT font) {
@@ -58,9 +73,17 @@ void Settings::setTransparency(int transparency) {
 	this->transparency = transparency;
 }
 
+int Settings::getTransparency() {
+	return transparency;
+}
+
+
 void Settings::apply() {
 
+	int fontSize = getFontSize();
 	SendMessage(editControl, WM_SETFONT, reinterpret_cast<WPARAM>(font), true);
-	SendMessage(editControl, EM_SETMODIFY, true, 0);
+
+	SetLayeredWindowAttributes(owner, 0, transparency, LWA_ALPHA);
+
 
 }

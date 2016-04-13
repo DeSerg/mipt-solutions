@@ -67,11 +67,14 @@ void COverlappedWindow::OnCreate() {
 	HGLOBAL defTextData = ::LoadResource(module, defTextRec);
 	wchar_t *data = reinterpret_cast<wchar_t *>(LockResource(defTextData));
 
+	SetWindowLong(handle, GWL_EXSTYLE, GetWindowLong(handle, GWL_EXSTYLE) | WS_EX_LAYERED);
+	SetLayeredWindowAttributes(handle, 0, (255 * 100) / 100, LWA_ALPHA);
 
 	baseFont = CreateFont(20, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 0, 0, 0, 0, L"Arial");
 	SendMessage(hwndEdit, WM_SETFONT, reinterpret_cast<WPARAM>(baseFont), true);
 	SetWindowText(hwndEdit, data);
 
+	settingsOld = settingsNew = Settings(hwndEdit, handle);
 
 }
 
@@ -145,41 +148,132 @@ int COverlappedWindow::OnCommand(WPARAM wParam) {
 	return 0;
 }
 
+HBRUSH COverlappedWindow::OnCtlColorEdit(HDC dc) {
+
+	HBRUSH brush;
+
+	if (preview) {
+		brush = settingsNew.getBackgroundBrush();
+	} else {
+		brush = settingsOld.getBackgroundBrush();
+	}
+
+	LOGBRUSH lb;
+	GetObject(brush, sizeof(lb), &lb);
+
+	SetBkColor(dc, lb.lbColor);
+	return brush;
+}
+
 void COverlappedWindow::OnInitDialog(HWND dialogHandle) {
 	
 	hwndSettingsDialog = dialogHandle;
-	settingsOld = settingsNew = Settings(hwndEdit, handle);
+
 
 	preview = true;
 	SendDlgItemMessage(dialogHandle, IDC_CHECK_PREVIEW, BM_SETCHECK, BST_CHECKED, 0);
 
 	int fontSize = settingsNew.getFontSize();
-	SendDlgItemMessage(dialogHandle, IDC_FONT_SLIDER, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)fontSize);
 	SendDlgItemMessage(dialogHandle, IDC_FONT_SLIDER, TBM_SETRANGE, (WPARAM)1, (LPARAM)MAKELONG(8, 72));
+	SendDlgItemMessage(dialogHandle, IDC_FONT_SLIDER, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)fontSize);
 	
-	
-	SendDlgItemMessage(dialogHandle, IDC_TRANSPARENCY_SLIDER, TBM_SETRANGE, (WPARAM)1, (LPARAM)MAKELONG(0, 100));
+	int transparency = settingsNew.getTransparency();
+	SendDlgItemMessage(dialogHandle, IDC_TRANSPARENCY_SLIDER, TBM_SETRANGE, (WPARAM)1, (LPARAM)MAKELONG(0, 255));
+	SendDlgItemMessage(dialogHandle, IDC_TRANSPARENCY_SLIDER, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)transparency);
 
 }
 
 void COverlappedWindow::OnHScroll() {
 	int positionFont = SendDlgItemMessage(hwndSettingsDialog, IDC_FONT_SLIDER, TBM_GETPOS, 0, 0);
 	int positionTransparency = SendDlgItemMessage(hwndSettingsDialog, IDC_TRANSPARENCY_SLIDER, TBM_GETPOS, 0, 0);
+	
 	settingsNew.setFontSize(positionFont);
+	settingsNew.setTransparency(positionTransparency);
+	
 	if (preview) {
 		settingsNew.apply();
 	}
+
+}
+
+void COverlappedWindow::OnSettingsBackground(HWND dialogHandle) {
+
+	CHOOSECOLOR cc;
+	static COLORREF acrCustClr[16];
+	HWND hwnd;
+	HBRUSH hbrush;
+	static DWORD rgbCurrent;
+
+	ZeroMemory(&cc, sizeof(cc));
+	cc.lStructSize = sizeof(cc);
+	cc.hwndOwner = dialogHandle;
+	cc.lpCustColors = (LPDWORD)acrCustClr;
+	cc.rgbResult = rgbCurrent;
+	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+
+	if (ChooseColor(&cc) == TRUE) {
+		settingsNew.setBackgroundBrush(CreateSolidBrush(cc.rgbResult));
+	}
+
+	if (preview) {
+		settingsNew.apply();
+	}
+
+}
+
+void COverlappedWindow::OnSettingsFont(HWND dialogHandle) {
+
+	CHOOSEFONT cf;
+	LOGFONT lf;
+	HFONT hfont;
+
+	cf.lStructSize = sizeof(CHOOSEFONT);
+	cf.hwndOwner = (HWND)NULL;
+	cf.hDC = (HDC)NULL;
+	cf.lpLogFont = &lf;
+	cf.iPointSize = 0;
+	cf.Flags = CF_SCREENFONTS;
+	cf.rgbColors = RGB(0, 0, 0);
+	cf.lCustData = 0L;
+	cf.lpfnHook = (LPCFHOOKPROC)NULL;
+	cf.lpTemplateName = (LPCWSTR)NULL;
+	cf.hInstance = (HINSTANCE)NULL;
+	cf.lpszStyle = (LPWSTR)NULL;
+	cf.nFontType = SCREEN_FONTTYPE;
+	cf.nSizeMin = 0;
+	cf.nSizeMax = 0;
+
+	ChooseFont(&cf);
+
+	settingsNew.setFont(CreateFontIndirect(cf.lpLogFont));
+	if (preview) {
+		settingsNew.apply();
+	}
+
 }
 
 void COverlappedWindow::OnSettingsOK(HWND dialogHandle) {
 	settingsOld = settingsNew;
 	settingsOld.apply();
+	preview = false;
 	EndDialog(dialogHandle, 0);
 }
 
 void COverlappedWindow::OnSettingsCansel(HWND dialogHandle) {
 	settingsOld.apply();
+	preview = false;
 	EndDialog(dialogHandle, 0);
+}
+
+void COverlappedWindow::OnSettingsPreview(HWND dialogHandle) {
+
+	preview = SendDlgItemMessage(dialogHandle, IDC_CHECK_PREVIEW, BM_GETCHECK, 0, 0);
+	if (preview) {
+		settingsNew.apply();
+	} else {
+		settingsOld.apply();
+	}
+
 }
 
 void COverlappedWindow::getClientRect(long &width, long &height) {
@@ -286,8 +380,8 @@ LRESULT __stdcall COverlappedWindow::windowProc(HWND handle, UINT message, WPARA
 	case WM_SETFOCUS:
         SetFocus(window->hwndEdit); 
         return 0; 
-	case WM_GETTEXTLENGTH:
-		
+	case WM_CTLCOLOREDIT:
+		return LRESULT(window->OnCtlColorEdit(reinterpret_cast<HDC>(wParam)));
 	default: {
 		return DefWindowProc(handle, message, wParam, lParam);
 	}
@@ -303,17 +397,21 @@ INT_PTR CALLBACK COverlappedWindow::DialogProc(HWND hwndDlg, UINT uMsg, WPARAM w
 	
 	case WM_INITDIALOG:
 
-
 		window = reinterpret_cast<COverlappedWindow *>(GetWindowLongPtr(GetParent(hwndDlg), GWLP_USERDATA));
 		window->OnInitDialog(hwndDlg);
 		return TRUE;
 
-
 	case WM_COMMAND:
 		switch (wParam) {
+		case IDC_CHECK_PREVIEW: {
+			window->OnSettingsPreview(hwndDlg);
+			return TRUE;
+		}
 		case IDC_BACKGROUND:
+			window->OnSettingsBackground(hwndDlg);
 			return TRUE;
 		case IDC_FONT:
+			window->OnSettingsFont(hwndDlg);
 			return TRUE;
 		case IDOK:
 			window->OnSettingsOK(hwndDlg);
