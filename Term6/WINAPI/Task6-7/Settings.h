@@ -5,7 +5,7 @@ class Settings {
 public:
 
 	Settings();
-	Settings(HWND editControl, HWND owner);
+	Settings(HWND editControl, HWND owner, COLORREF color);
 	Settings(const Settings &dialog);
 
 	void setBackgroundBrush(HBRUSH backgroundBrush);

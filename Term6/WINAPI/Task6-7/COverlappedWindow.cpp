@@ -49,6 +49,7 @@ void COverlappedWindow::OnNCCreate(HWND _handle) {
 void COverlappedWindow::OnCreate() {
 
 	textChanged = false;
+	dialogOpen = false;
 
 	hwndEdit = CreateWindowEx(
                     0, L"EDIT",
@@ -74,7 +75,9 @@ void COverlappedWindow::OnCreate() {
 	SendMessage(hwndEdit, WM_SETFONT, reinterpret_cast<WPARAM>(baseFont), true);
 	SetWindowText(hwndEdit, data);
 
-	settingsOld = settingsNew = Settings(hwndEdit, handle);
+	backColor = RGB(255, 255, 255);
+	settingsOld = settingsNew = Settings(hwndEdit, handle, backColor);
+	settingsOld.apply();
 
 }
 
@@ -152,7 +155,7 @@ HBRUSH COverlappedWindow::OnCtlColorEdit(HDC dc) {
 
 	HBRUSH brush;
 
-	if (preview) {
+	if (dialogOpen && preview) {
 		brush = settingsNew.getBackgroundBrush();
 	} else {
 		brush = settingsOld.getBackgroundBrush();
@@ -169,8 +172,8 @@ void COverlappedWindow::OnInitDialog(HWND dialogHandle) {
 	
 	hwndSettingsDialog = dialogHandle;
 
-
 	preview = true;
+	dialogOpen = true;
 	SendDlgItemMessage(dialogHandle, IDC_CHECK_PREVIEW, BM_SETCHECK, BST_CHECKED, 0);
 
 	int fontSize = settingsNew.getFontSize();
@@ -255,13 +258,13 @@ void COverlappedWindow::OnSettingsFont(HWND dialogHandle) {
 void COverlappedWindow::OnSettingsOK(HWND dialogHandle) {
 	settingsOld = settingsNew;
 	settingsOld.apply();
-	preview = false;
+	dialogOpen = false;
 	EndDialog(dialogHandle, 0);
 }
 
 void COverlappedWindow::OnSettingsCansel(HWND dialogHandle) {
 	settingsOld.apply();
-	preview = false;
+	dialogOpen = false;
 	EndDialog(dialogHandle, 0);
 }
 

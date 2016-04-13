@@ -2,7 +2,7 @@
 
 Settings::Settings() {}
 
-Settings::Settings(HWND editControl, HWND owner) {
+Settings::Settings(HWND editControl, HWND owner, COLORREF color) {
 	this->editControl = editControl;
 	this->owner = owner;
 
@@ -10,8 +10,7 @@ Settings::Settings(HWND editControl, HWND owner) {
 	GetLayeredWindowAttributes(owner, NULL, &byteTrans, NULL);
 	transparency = int(byteTrans);
 
-	backgroundBrush = CreateSolidBrush(RGB(255, 255, 255));
-	
+	backgroundBrush = CreateSolidBrush(color);
 
 	HFONT originFont = reinterpret_cast<HFONT>(SendMessage(editControl, WM_GETFONT, 0, 0));
 	LOGFONT lf;
@@ -82,8 +81,6 @@ void Settings::apply() {
 
 	int fontSize = getFontSize();
 	SendMessage(editControl, WM_SETFONT, reinterpret_cast<WPARAM>(font), true);
-
 	SetLayeredWindowAttributes(owner, 0, transparency, LWA_ALPHA);
-
 
 }

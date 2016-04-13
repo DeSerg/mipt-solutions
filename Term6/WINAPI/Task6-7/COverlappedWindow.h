@@ -49,7 +49,9 @@ private:
 	HWND hwndSettingsDialog;
 	bool textChanged;
 
+	bool dialogOpen;
 	HFONT baseFont;
+	COLORREF backColor;
 	bool preview;
 	Settings settingsOld;
 	Settings settingsNew;
