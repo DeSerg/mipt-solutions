@@ -5,11 +5,13 @@ class Settings {
 public:
 
 	Settings();
-	Settings(HWND editControl, HWND owner, COLORREF color);
-	Settings(const Settings &dialog);
+	Settings(HWND editControl, HWND owner, COLORREF backgroundColor, COLORREF fontColor);
 
-	void setBackgroundBrush(HBRUSH backgroundBrush);
-	HBRUSH getBackgroundBrush();
+	void setBackgroundColor(COLORREF backgroundColor);
+	COLORREF getBackgroundColor();
+	void setFontColor(COLORREF fontColor);
+	COLORREF getFontColor();
+
 	void setFont(HFONT font);
 	void setFontSize(int fontSize);
 	int getFontSize();
@@ -20,7 +22,8 @@ public:
 
 private:
 
-	HBRUSH backgroundBrush;
+	COLORREF backgroundColor;
+	COLORREF fontColor;
 	HFONT font;
 	int transparency;
 	

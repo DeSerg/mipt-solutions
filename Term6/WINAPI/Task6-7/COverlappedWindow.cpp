@@ -71,13 +71,15 @@ void COverlappedWindow::OnCreate() {
 	SetWindowLong(handle, GWL_EXSTYLE, GetWindowLong(handle, GWL_EXSTYLE) | WS_EX_LAYERED);
 	SetLayeredWindowAttributes(handle, 0, (255 * 100) / 100, LWA_ALPHA);
 
-	baseFont = CreateFont(20, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 0, 0, 0, 0, L"Arial");
+	HFONT baseFont = CreateFont(20, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 0, 0, 0, 0, L"Arial");
 	SendMessage(hwndEdit, WM_SETFONT, reinterpret_cast<WPARAM>(baseFont), true);
 	SetWindowText(hwndEdit, data);
 
-	backColor = RGB(255, 255, 255);
-	settingsOld = settingsNew = Settings(hwndEdit, handle, backColor);
-	settingsOld.apply();
+	COLORREF backColor = RGB(255, 255, 255);
+	COLORREF fontColor = RGB(0, 0, 0);
+
+	settingsNew = Settings(hwndEdit, handle, backColor, fontColor);
+	settingsOld = Settings(hwndEdit, handle, backColor, fontColor);
 
 }
 
@@ -94,7 +96,6 @@ void COverlappedWindow::OnClose() {
 }
 
 void COverlappedWindow::OnDestroy() {
-	DeleteObject(baseFont);
 	PostQuitMessage(0);
 }
 
@@ -125,21 +126,7 @@ int COverlappedWindow::OnCommand(WPARAM wParam) {
 		break;
 	case ID_TEST_SETFONT: {
 
-		LOGFONT lf;
-		HFONT font;
-		int fontSize = 30;
-
-		font = reinterpret_cast<HFONT>(SendMessage(hwndEdit, WM_GETFONT, 0, 0));
-		if (font == NULL) {
-			font = reinterpret_cast<HFONT>(GetStockObject(SYSTEM_FONT));
-		}
-		GetObject(font, sizeof(lf), &lf);
-		lf.lfHeight = fontSize;
-
-		//DeleteObject(font);
-		//font = CreateFontIndirect(&lf);
-		font = CreateFont(12, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 0, 0, 0, 0, L"Arial");
-		SendMessage(hwndEdit, WM_SETFONT, reinterpret_cast<WPARAM>(font), true);
+		settingsOld.apply();
 
 		break;
 
@@ -153,19 +140,20 @@ int COverlappedWindow::OnCommand(WPARAM wParam) {
 
 HBRUSH COverlappedWindow::OnCtlColorEdit(HDC dc) {
 
-	HBRUSH brush;
+	COLORREF backColor;
+	COLORREF fontColor;
 
 	if (dialogOpen && preview) {
-		brush = settingsNew.getBackgroundBrush();
+		backColor = settingsNew.getBackgroundColor();
+		fontColor = settingsNew.getFontColor();
 	} else {
-		brush = settingsOld.getBackgroundBrush();
+		backColor = settingsOld.getBackgroundColor();
+		fontColor = settingsOld.getFontColor();
 	}
 
-	LOGBRUSH lb;
-	GetObject(brush, sizeof(lb), &lb);
-
-	SetBkColor(dc, lb.lbColor);
-	return brush;
+	SetBkColor(dc, backColor);
+	SetTextColor(dc, fontColor);
+	return CreateSolidBrush(backColor);
 }
 
 void COverlappedWindow::OnInitDialog(HWND dialogHandle) {
@@ -203,8 +191,6 @@ void COverlappedWindow::OnSettingsBackground(HWND dialogHandle) {
 
 	CHOOSECOLOR cc;
 	static COLORREF acrCustClr[16];
-	HWND hwnd;
-	HBRUSH hbrush;
 	static DWORD rgbCurrent;
 
 	ZeroMemory(&cc, sizeof(cc));
@@ -215,7 +201,7 @@ void COverlappedWindow::OnSettingsBackground(HWND dialogHandle) {
 	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
 
 	if (ChooseColor(&cc) == TRUE) {
-		settingsNew.setBackgroundBrush(CreateSolidBrush(cc.rgbResult));
+		settingsNew.setBackgroundColor(cc.rgbResult);
 	}
 
 	if (preview) {
@@ -226,29 +212,21 @@ void COverlappedWindow::OnSettingsBackground(HWND dialogHandle) {
 
 void COverlappedWindow::OnSettingsFont(HWND dialogHandle) {
 
-	CHOOSEFONT cf;
-	LOGFONT lf;
-	HFONT hfont;
+	CHOOSECOLOR cc;
+	static COLORREF acrCustClr[16];
+	static DWORD rgbCurrent;
 
-	cf.lStructSize = sizeof(CHOOSEFONT);
-	cf.hwndOwner = (HWND)NULL;
-	cf.hDC = (HDC)NULL;
-	cf.lpLogFont = &lf;
-	cf.iPointSize = 0;
-	cf.Flags = CF_SCREENFONTS;
-	cf.rgbColors = RGB(0, 0, 0);
-	cf.lCustData = 0L;
-	cf.lpfnHook = (LPCFHOOKPROC)NULL;
-	cf.lpTemplateName = (LPCWSTR)NULL;
-	cf.hInstance = (HINSTANCE)NULL;
-	cf.lpszStyle = (LPWSTR)NULL;
-	cf.nFontType = SCREEN_FONTTYPE;
-	cf.nSizeMin = 0;
-	cf.nSizeMax = 0;
+	ZeroMemory(&cc, sizeof(cc));
+	cc.lStructSize = sizeof(cc);
+	cc.hwndOwner = dialogHandle;
+	cc.lpCustColors = (LPDWORD)acrCustClr;
+	cc.rgbResult = rgbCurrent;
+	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
 
-	ChooseFont(&cf);
+	if (ChooseColor(&cc) == TRUE) {
+		settingsNew.setFontColor(cc.rgbResult);
+	}
 
-	settingsNew.setFont(CreateFontIndirect(cf.lpLogFont));
 	if (preview) {
 		settingsNew.apply();
 	}

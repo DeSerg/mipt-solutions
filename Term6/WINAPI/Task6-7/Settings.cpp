@@ -2,15 +2,17 @@
 
 Settings::Settings() {}
 
-Settings::Settings(HWND editControl, HWND owner, COLORREF color) {
+Settings::Settings(HWND editControl, HWND owner, COLORREF backgroundColor, COLORREF fontColor) {
 	this->editControl = editControl;
 	this->owner = owner;
+	this->backgroundColor = backgroundColor;
+	this->fontColor = fontColor;
 
 	BYTE byteTrans;
 	GetLayeredWindowAttributes(owner, NULL, &byteTrans, NULL);
 	transparency = int(byteTrans);
 
-	backgroundBrush = CreateSolidBrush(color);
+
 
 	HFONT originFont = reinterpret_cast<HFONT>(SendMessage(editControl, WM_GETFONT, 0, 0));
 	LOGFONT lf;
@@ -24,22 +26,22 @@ Settings::Settings(HWND editControl, HWND owner, COLORREF color) {
 	
 }
 
-Settings::Settings(const Settings &settings) {
-	this->editControl = settings.editControl;
-	this->backgroundBrush = settings.backgroundBrush;
-	this->font = settings.font;
-	this->transparency = settings.transparency;
+void Settings::setBackgroundColor(COLORREF backgroundColor) {
+	this->backgroundColor = backgroundColor;
 }
 
-void Settings::setBackgroundBrush(HBRUSH backgroundBrush) {
-	if (this->backgroundBrush != NULL) {
-		DeleteObject(this->backgroundBrush);
-	}
-	this->backgroundBrush = backgroundBrush;
+COLORREF Settings::getBackgroundColor() {
+	return backgroundColor;
 }
 
-HBRUSH Settings::getBackgroundBrush() {
-	return backgroundBrush;
+void Settings::setFontColor(COLORREF fontColor) {
+
+	this->fontColor = fontColor;
+
+}
+
+COLORREF Settings::getFontColor() {
+	return fontColor;
 }
 
 void Settings::setFont(HFONT font) {
@@ -82,5 +84,5 @@ void Settings::apply() {
 	int fontSize = getFontSize();
 	SendMessage(editControl, WM_SETFONT, reinterpret_cast<WPARAM>(font), true);
 	SetLayeredWindowAttributes(owner, 0, transparency, LWA_ALPHA);
-
+	InvalidateRect(owner, NULL, 1);
 }

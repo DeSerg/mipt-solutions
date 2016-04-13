@@ -50,8 +50,6 @@ private:
 	bool textChanged;
 
 	bool dialogOpen;
-	HFONT baseFont;
-	COLORREF backColor;
 	bool preview;
 	Settings settingsOld;
 	Settings settingsNew;
