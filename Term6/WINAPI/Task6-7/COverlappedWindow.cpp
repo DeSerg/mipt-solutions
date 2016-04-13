@@ -118,7 +118,10 @@ int COverlappedWindow::OnCommand(WPARAM wParam) {
 		SendMessage(handle, WM_CLOSE, 0, 0);
 		break;
 	case ID_VIEW_SETTINGS:
-		DialogBox(GetModuleHandle(0), MAKEINTRESOURCE(IDD_NOTEPAD_SETTINGS), handle, reinterpret_cast<DLGPROC>(DialogProc));
+		hwndSettingsDialog = CreateDialog(GetModuleHandle(0), 
+			MAKEINTRESOURCE(IDD_NOTEPAD_SETTINGS), handle, reinterpret_cast<DLGPROC>(DialogProc));
+		ShowWindow(hwndSettingsDialog, SW_SHOW);
+		//DialogBox(GetModuleHandle(0), MAKEINTRESOURCE(IDD_NOTEPAD_SETTINGS), handle, reinterpret_cast<DLGPROC>(DialogProc));
 		break;
 
 	case ID_QUIT:
@@ -383,7 +386,7 @@ INT_PTR CALLBACK COverlappedWindow::DialogProc(HWND hwndDlg, UINT uMsg, WPARAM w
 		return TRUE;
 
 	case WM_COMMAND:
-		switch (wParam) {
+		switch (LOWORD(wParam)) {
 		case IDC_CHECK_PREVIEW: {
 			window->OnSettingsPreview(hwndDlg);
 			return TRUE;
