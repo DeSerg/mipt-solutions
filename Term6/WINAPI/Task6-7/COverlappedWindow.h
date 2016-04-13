@@ -30,8 +30,10 @@ protected:
 	void OnTimer();
 	void OnPaint();
 	void OnSetCursor();
-	void OnInitDialog(HWND handle);
+	void OnInitDialog(HWND dialogHandle);
 	void OnHScroll();
+	void OnSettingsOK(HWND dialogHandle);
+	void OnSettingsCansel(HWND dialogHandle);
 
 
 
@@ -39,8 +41,11 @@ private:
 	
 	HWND handle;
 	HWND hwndEdit;
+	HWND hwndSettingsDialog;
 	bool textChanged;
 
+	HFONT baseFont;
+	bool preview;
 	Settings settingsOld;
 	Settings settingsNew;
 

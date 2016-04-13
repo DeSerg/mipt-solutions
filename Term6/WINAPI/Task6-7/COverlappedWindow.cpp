@@ -66,7 +66,13 @@ void COverlappedWindow::OnCreate() {
 	HRSRC defTextRec = ::FindResource(module, MAKEINTRESOURCE(IDR_RC_TEXT1), L"RC_TEXT");
 	HGLOBAL defTextData = ::LoadResource(module, defTextRec);
 	wchar_t *data = reinterpret_cast<wchar_t *>(LockResource(defTextData));
+
+
+	baseFont = CreateFont(20, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 0, 0, 0, 0, L"Arial");
+	SendMessage(hwndEdit, WM_SETFONT, reinterpret_cast<WPARAM>(baseFont), true);
 	SetWindowText(hwndEdit, data);
+
+
 }
 
 void COverlappedWindow::OnClose() {
@@ -82,6 +88,7 @@ void COverlappedWindow::OnClose() {
 }
 
 void COverlappedWindow::OnDestroy() {
+	DeleteObject(baseFont);
 	PostQuitMessage(0);
 }
 
@@ -104,17 +111,75 @@ int COverlappedWindow::OnCommand(WPARAM wParam) {
 		SendMessage(handle, WM_CLOSE, 0, 0);
 		break;
 	case ID_VIEW_SETTINGS:
-		settingsNew = Settings(hwndEdit);
-		settingsOld = Settings(hwndEdit);
 		DialogBox(GetModuleHandle(0), MAKEINTRESOURCE(IDD_NOTEPAD_SETTINGS), handle, reinterpret_cast<DLGPROC>(DialogProc));
-		return 0;
+		break;
+
 	case ID_QUIT:
 		SendMessage(handle, WM_DESTROY, 0, 0);
+		break;
+	case ID_TEST_SETFONT: {
+
+		LOGFONT lf;
+		HFONT font;
+		int fontSize = 30;
+
+		font = reinterpret_cast<HFONT>(SendMessage(hwndEdit, WM_GETFONT, 0, 0));
+		if (font == NULL) {
+			font = reinterpret_cast<HFONT>(GetStockObject(SYSTEM_FONT));
+		}
+		GetObject(font, sizeof(lf), &lf);
+		lf.lfHeight = fontSize;
+
+		//DeleteObject(font);
+		//font = CreateFontIndirect(&lf);
+		font = CreateFont(12, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 0, 0, 0, 0, L"Arial");
+		SendMessage(hwndEdit, WM_SETFONT, reinterpret_cast<WPARAM>(font), true);
+
+		break;
+
+	}
 	default:
 		return 1;
 	}
 
 	return 0;
+}
+
+void COverlappedWindow::OnInitDialog(HWND dialogHandle) {
+	
+	hwndSettingsDialog = dialogHandle;
+	settingsOld = settingsNew = Settings(hwndEdit, handle);
+
+	preview = true;
+	SendDlgItemMessage(dialogHandle, IDC_CHECK_PREVIEW, BM_SETCHECK, BST_CHECKED, 0);
+
+	int fontSize = settingsNew.getFontSize();
+	SendDlgItemMessage(dialogHandle, IDC_FONT_SLIDER, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)fontSize);
+	SendDlgItemMessage(dialogHandle, IDC_FONT_SLIDER, TBM_SETRANGE, (WPARAM)1, (LPARAM)MAKELONG(8, 72));
+	
+	
+	SendDlgItemMessage(dialogHandle, IDC_TRANSPARENCY_SLIDER, TBM_SETRANGE, (WPARAM)1, (LPARAM)MAKELONG(0, 100));
+
+}
+
+void COverlappedWindow::OnHScroll() {
+	int positionFont = SendDlgItemMessage(hwndSettingsDialog, IDC_FONT_SLIDER, TBM_GETPOS, 0, 0);
+	int positionTransparency = SendDlgItemMessage(hwndSettingsDialog, IDC_TRANSPARENCY_SLIDER, TBM_GETPOS, 0, 0);
+	settingsNew.setFontSize(positionFont);
+	if (preview) {
+		settingsNew.apply();
+	}
+}
+
+void COverlappedWindow::OnSettingsOK(HWND dialogHandle) {
+	settingsOld = settingsNew;
+	settingsOld.apply();
+	EndDialog(dialogHandle, 0);
+}
+
+void COverlappedWindow::OnSettingsCansel(HWND dialogHandle) {
+	settingsOld.apply();
+	EndDialog(dialogHandle, 0);
 }
 
 void COverlappedWindow::getClientRect(long &width, long &height) {
@@ -238,12 +303,9 @@ INT_PTR CALLBACK COverlappedWindow::DialogProc(HWND hwndDlg, UINT uMsg, WPARAM w
 	
 	case WM_INITDIALOG:
 
-		window = reinterpret_cast<COverlappedWindow *>(GetWindowLongPtr(GetParent(hwndDlg), 0));
 
-		SendDlgItemMessage(hwndDlg, IDC_FONT_SLIDER, TBM_SETRANGE, (WPARAM)1, (LPARAM)MAKELONG(8, 72));
-		SendDlgItemMessage(hwndDlg, IDC_TRANSPARENCY_SLIDER, TBM_SETRANGE, (WPARAM)1, (LPARAM)MAKELONG(0, 100));
-
-
+		window = reinterpret_cast<COverlappedWindow *>(GetWindowLongPtr(GetParent(hwndDlg), GWLP_USERDATA));
+		window->OnInitDialog(hwndDlg);
 		return TRUE;
 
 
@@ -254,18 +316,16 @@ INT_PTR CALLBACK COverlappedWindow::DialogProc(HWND hwndDlg, UINT uMsg, WPARAM w
 		case IDC_FONT:
 			return TRUE;
 		case IDOK:
-			window->settingsOld = window->settingsNew;
-			EndDialog(hwndDlg, 0);
+			window->OnSettingsOK(hwndDlg);
 			return TRUE;
 		case IDCANCEL:
-			EndDialog(hwndDlg, 0);
+			window->OnSettingsCansel(hwndDlg);
 			return TRUE;
 		}
 		break;
 
 	case WM_HSCROLL:
-		int positionFont = SendDlgItemMessage(hwndDlg, IDC_FONT_SLIDER, TBM_GETPOS, 0, 0);
-		int positionTransparency = SendDlgItemMessage(hwndDlg, IDC_TRANSPARENCY_SLIDER, TBM_GETPOS, 0, 0);
+		window->OnHScroll();
 		return TRUE;
 
 	}
