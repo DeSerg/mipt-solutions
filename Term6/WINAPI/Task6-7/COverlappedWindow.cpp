@@ -125,6 +125,7 @@ int COverlappedWindow::OnCommand(WPARAM wParam) {
 		hwndSettingsDialog = CreateDialog(GetModuleHandle(0), 
 			MAKEINTRESOURCE(IDD_NOTEPAD_SETTINGS), handle, reinterpret_cast<DLGPROC>(DialogProc));
 		ShowWindow(hwndSettingsDialog, SW_SHOW);
+		SetFocus(hwndSettingsDialog);
 		SetActiveWindow(hwndSettingsDialog);
 		//DialogBox(GetModuleHandle(0), MAKEINTRESOURCE(IDD_NOTEPAD_SETTINGS), handle, reinterpret_cast<DLGPROC>(DialogProc));
 		break;
@@ -366,9 +367,6 @@ LRESULT __stdcall COverlappedWindow::windowProc(HWND handle, UINT message, WPARA
 			return DefWindowProc(handle, message, wParam, lParam);
 		}
 	}
-	case WM_SETFOCUS:
-        SetFocus(window->hwndEdit); 
-        return 0; 
 	case WM_CTLCOLOREDIT:
 		return LRESULT(window->OnCtlColorEdit(reinterpret_cast<HDC>(wParam)));
 	default: {
