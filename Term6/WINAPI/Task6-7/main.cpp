@@ -29,7 +29,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			return -1;
 		}
 		if (!TranslateAccelerator(window.getHandle(), hAccel, &message) &&
-			(!IsWindow(window.getHandle()) || !IsDialogMessage(window.getHandle(), &message))) {
+			(!IsWindow(window.getSettingsDialogHandle()) || !IsDialogMessage(window.getSettingsDialogHandle(), &message))) {
 			::TranslateMessage(&message);
 			::DispatchMessage(&message);
 		}

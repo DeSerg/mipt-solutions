@@ -42,6 +42,10 @@ HWND COverlappedWindow::getHandle() {
 	return handle;
 }
 
+HWND COverlappedWindow::getSettingsDialogHandle() {
+	return hwndSettingsDialog;
+}
+
 void COverlappedWindow::OnNCCreate(HWND _handle) {
 	handle = _handle;
 }
@@ -121,6 +125,7 @@ int COverlappedWindow::OnCommand(WPARAM wParam) {
 		hwndSettingsDialog = CreateDialog(GetModuleHandle(0), 
 			MAKEINTRESOURCE(IDD_NOTEPAD_SETTINGS), handle, reinterpret_cast<DLGPROC>(DialogProc));
 		ShowWindow(hwndSettingsDialog, SW_SHOW);
+		SetActiveWindow(hwndSettingsDialog);
 		//DialogBox(GetModuleHandle(0), MAKEINTRESOURCE(IDD_NOTEPAD_SETTINGS), handle, reinterpret_cast<DLGPROC>(DialogProc));
 		break;
 
@@ -240,13 +245,13 @@ void COverlappedWindow::OnSettingsOK(HWND dialogHandle) {
 	settingsOld = settingsNew;
 	settingsOld.apply();
 	dialogOpen = false;
-	EndDialog(dialogHandle, 0);
+	DestroyWindow(dialogHandle);
 }
 
 void COverlappedWindow::OnSettingsCansel(HWND dialogHandle) {
 	settingsOld.apply();
 	dialogOpen = false;
-	EndDialog(dialogHandle, 0);
+	DestroyWindow(dialogHandle);
 }
 
 void COverlappedWindow::OnSettingsPreview(HWND dialogHandle) {

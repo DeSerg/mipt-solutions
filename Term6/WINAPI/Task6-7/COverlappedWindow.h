@@ -18,6 +18,7 @@ public:
 	// Показать окно
 	void Show(int cmdShow);
 	HWND getHandle();
+	HWND getSettingsDialogHandle();
 
 protected:
 	void OnNCCreate(HWND _handle);
