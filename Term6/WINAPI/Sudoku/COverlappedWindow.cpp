@@ -52,9 +52,9 @@ void COverlappedWindow::OnCreate() {
 	AdjustWindowRectEx(&clientRect, windowStyle, FALSE, windowExStyle);
 
 	SetWindowPos(handle, HWND_TOP, 0, 0, clientRect.right - clientRect.left, clientRect.bottom - clientRect.top, SWP_NOMOVE);
+	
 
 	initData();
-
 
 }
 
@@ -141,7 +141,20 @@ void COverlappedWindow::On_LButtonDown(WPARAM wParam, LPARAM lParam) {
 void COverlappedWindow::On_LButtonUp(WPARAM wParam, LPARAM lParam) {
 
 	if (menuButtons[10] == menuButtonPressedBMP) {
-		int action = DialogBox(GetModuleHandle(0), MAKEINTRESOURCE(IDD_MENU_DIALOG), handle, (DLGPROC)DialogProc);
+		int action = DialogBox(GetModuleHandle(0), MAKEINTRESOURCE(IDD_MENU_DIALOG), handle, reinterpret_cast<DLGPROC>(DialogProc));
+		switch (action) {
+		case START:
+			sudoku.getRandomGrid(grid);
+			break;
+		case RESTART:
+			sudoku.getPreviousGrid(grid);
+			break;
+		case DEV:
+			MessageBox(handle, L"The game is created by Serg Popov", L"Developers", MB_OK);
+			break;
+		default:
+			break;
+		}
 	}
 	menuButtons[10] = menuButtonBMP;
 
@@ -160,6 +173,20 @@ void COverlappedWindow::On_LButtonUp(WPARAM wParam, LPARAM lParam) {
 }
 
 
+//menu messages
+void COverlappedWindow::OnInitMenuDialog(HWND hwndDlg) {
+
+	RECT sudokuRect;
+	GetWindowRect(handle, &sudokuRect);
+
+	RECT menuRect;
+	GetWindowRect(hwndDlg, &menuRect);
+
+	SetWindowPos(hwndDlg, HWND_TOP, sudokuRect.left + (sudokuRect.right - sudokuRect.left) / 2 - (menuRect.right - menuRect.left) / 2,
+					sudokuRect.top + (sudokuRect.bottom - sudokuRect.top) / 6, 0, 0, SWP_NOSIZE);
+
+}
+
 //sudoku methods
 void COverlappedWindow::initData() {
 
@@ -167,13 +194,7 @@ void COverlappedWindow::initData() {
 
 
 	//grid init
-	grid.resize(9);
-	for (int i = 0; i < 9; ++i) {
-		grid[i].resize(9);
-		for (int j = 0; j < 9; ++j) {
-			grid[i][j] = rand() % 10;
-		}
-	}
+	sudoku.getRandomGrid(grid);
 
 	isDigitPressed = false;
 	iPressed = 0;
@@ -461,7 +482,16 @@ LRESULT __stdcall COverlappedWindow::windowProc(HWND handle, UINT message, WPARA
 
 INT_PTR CALLBACK COverlappedWindow::DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
+	static COverlappedWindow *window;
+
 	switch (uMsg) {
+
+	case WM_INITDIALOG:
+
+		window = reinterpret_cast<COverlappedWindow *>(GetWindowLongPtr(GetParent(hwndDlg), GWLP_USERDATA));
+		window->OnInitMenuDialog(hwndDlg);
+		
+		return TRUE;
 
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
@@ -481,7 +511,36 @@ INT_PTR CALLBACK COverlappedWindow::DialogProc(HWND hwndDlg, UINT uMsg, WPARAM w
 			break;
 
 		}
+	case WM_CLOSE:
+		EndDialog(hwndDlg, NONE);
+		return TRUE;
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hwndDlg, &ps);
 
-		return FALSE;
+		BITMAP bm;
+
+		int x = 300;
+		int y = 270;
+		HBITMAP menuBackground = (HBITMAP)LoadImage(NULL, L"res\\menu_background.bmp", IMAGE_BITMAP, x, y, LR_LOADFROMFILE | LR_SHARED);
+
+		HDC hdcMem = CreateCompatibleDC(hdc);
+		HBITMAP hbmOld = reinterpret_cast<HBITMAP>(SelectObject(hdcMem, menuBackground));
+
+		GetObject(menuBackground, sizeof(bm), &bm);
+
+		RECT menuRect;
+		GetWindowRect(hwndDlg, &menuRect);
+
+		BitBlt(hdc, 0, 0, x, y, hdcMem, 0, 0, SRCCOPY);
+
+		SelectObject(hdcMem, hbmOld);
+		DeleteDC(hdcMem);
+
+		EndPaint(hwndDlg, &ps);
 	}
+
+	}
+
+	return FALSE;
 }

@@ -1,5 +1,6 @@
 #include "Common.h"
 #include "Cell.h"
+#include "Sudoku.h"
 
 class COverlappedWindow {
 public:
@@ -26,6 +27,7 @@ protected:
 	void On_LButtonDown(WPARAM wParam, LPARAM lParam);
 	void On_LButtonUp(WPARAM wParam, LPARAM lParam);
 
+	void OnInitMenuDialog(HWND hwndDlg);
 	void OnMenuStart(HWND hwndDlg);
 	void OnMenuRestart(HWND hwndDlg);
 	void OnMenuDev(HWND hwndDlg);
@@ -50,6 +52,7 @@ private:
 
 	int iPressed, jPressed;
 	bool isDigitPressed;
+	Sudoku sudoku = Sudoku();
 	std::vector<std::vector<int>> grid;
 	std::vector<HBITMAP> menuButtons;
 	std::vector<RECT> menuRects;
