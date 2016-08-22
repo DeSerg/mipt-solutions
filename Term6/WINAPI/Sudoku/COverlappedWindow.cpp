@@ -16,6 +16,7 @@ bool COverlappedWindow::RegisterClass() {
 	wcex.lpszClassName = L"OverlappedWindow";
 	wcex.hIconSm = NULL;
 	wcex.hIcon = (HICON)LoadImage(NULL, L"res\\icon.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	return (::RegisterClassEx(&wcex) != 0);
 
 }
@@ -23,7 +24,7 @@ bool COverlappedWindow::RegisterClass() {
 bool COverlappedWindow::Create() {
 
 	handle = CreateWindowEx(windowExStyle, L"OverlappedWindow", L"Sudoku", windowStyle,
-		CW_USEDEFAULT, CW_USEDEFAULT, winSize, winSize, 0, 0, GetModuleHandle(0), this);
+		CW_USEDEFAULT, CW_USEDEFAULT, win_size_, win_size_, 0, 0, GetModuleHandle(0), this);
 
 	SetWindowLongPtr(handle, GWL_USERDATA, reinterpret_cast<LONG>(this));
 
@@ -36,7 +37,19 @@ void COverlappedWindow::Show(int cmdShow) {
 	// The parameters to ShowWindow explained:
 	// hWnd: the value returned from CreateWindow
 	// nCmdShow: the fourth parameter from WinMain
-	ShowWindow(handle, cmdShow);
+
+	RECT window_rect;
+	GetWindowRect(handle, &window_rect);
+	int window_width = window_rect.right - window_rect.left;
+	int window_height = window_rect.bottom- window_rect.top;
+
+	int screen_width = GetSystemMetrics(SM_CXSCREEN);
+	int screen_height = GetSystemMetrics(SM_CYSCREEN);
+
+	SetWindowPos(handle, HWND_TOP, (screen_width - window_width) / 4, (screen_height - window_height) / 2, window_width, window_height, SWP_SHOWWINDOW);
+
+	//ShowWindow(handle, cmdShow);
+
 	//UpdateWindow(handle);
 
 }
@@ -48,7 +61,7 @@ void COverlappedWindow::OnNCCreate(HWND _handle) {
 //window messages
 void COverlappedWindow::OnCreate() {
 
-	RECT clientRect = { 0, 0, cellSize * 9 + menuWidth, cellSize * 9 };
+	RECT clientRect = { 0, 0, cell_size_ * 9 + menu_width_, cell_size_ * 9 };
 	AdjustWindowRectEx(&clientRect, windowStyle, FALSE, windowExStyle);
 
 	SetWindowPos(handle, HWND_TOP, 0, 0, clientRect.right - clientRect.left, clientRect.bottom - clientRect.top, SWP_NOMOVE);
@@ -66,7 +79,6 @@ void COverlappedWindow::OnClose() {
 
 void COverlappedWindow::OnDestroy() {
 
-	KillTimer(handle, TimerID);
 	PostQuitMessage(0);
 
 }
@@ -76,12 +88,6 @@ void COverlappedWindow::OnTimer() {
 	long width;
 	long height;
 	getClientRect(width, height);
-
-	xEllipseOld = xEllipse;
-	yEllipseOld = yEllipse;
-	xEllipse = (xEllipse + Delta) % width;
-	yEllipse = (yEllipse + Delta) % height;
-
 	InvalidateRect(handle, NULL, TRUE);
 }
 
@@ -95,10 +101,17 @@ void COverlappedWindow::OnPaint() {
 
 	PAINTSTRUCT ps;
 	HDC hdc = BeginPaint(handle, &ps);
-	
-	drawMenu(hdc);
-	drawGrid(hdc);
-	
+	HDC memHdc = CreateCompatibleDC(hdc);
+	HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
+	SelectObject(memHdc, hBitmap);
+
+	drawMenu(memHdc);
+	drawGrid(memHdc);
+
+	BitBlt(hdc, 0, 0, width, height, memHdc, 0, 0, SRCCOPY);
+	DeleteObject(hBitmap);
+	DeleteObject(memHdc);
+
 	EndPaint(handle, &ps);
 
 }
@@ -110,13 +123,14 @@ void COverlappedWindow::On_LButtonDown(WPARAM wParam, LPARAM lParam) {
 
 	if (wParam == MK_LBUTTON) {
 		for (int i = 0; i <= 10; ++i) {
-			if (x >= menuRects[i].left && x <= menuRects[i].right &&
-				y >= menuRects[i].top && y <= menuRects[i].bottom) {
+			if (x >= menu_rects_[i].left && x <= menu_rects_[i].right &&
+				y >= menu_rects_[i].top && y <= menu_rects_[i].bottom) {
 				if (i == 10) {
-					menuButtons[10] = menuButtonPressedBMP;
+					menu_buttons_[10] = menu_button_pressed_BMP_;
 				} else {
-					menuButtons[i] = menuDigitsPressed[i];
+					menu_buttons_[i] = menu_digits_pressed_[i];
 				}
+				updateRect(menu_rects_[i]);
 			}
 
 		}
@@ -124,30 +138,38 @@ void COverlappedWindow::On_LButtonDown(WPARAM wParam, LPARAM lParam) {
 
 		for (int i = 0; i < 9; ++i) {
 			for (int j = 0; j < 9; ++j) {
-				if (x >= i * cellSize && x <= (i + 1) * cellSize &&
-					y >= j * cellSize && y <= (j + 1) * cellSize) {
-					isDigitPressed = true;
-					iPressed = i;
-					jPressed = j;
+				if (x >= i * cell_size_ && x <= (i + 1) * cell_size_ &&
+					y >= j * cell_size_ && y <= (j + 1) * cell_size_) {
+
+					if (is_digit_pressed_) {
+						updateRect(field_rects_[i_pressed_][j_pressed_]);
+					}
+
+					is_digit_pressed_ = true;
+					i_pressed_ = i;
+					j_pressed_ = j;
+					updateRect(field_rects_[i][j]);
 				}
 			}
 		}
 
 	}
 
-	InvalidateRect(handle, NULL, TRUE);
+	//InvalidateRect(handle, NULL, TRUE);
 }
 
 void COverlappedWindow::On_LButtonUp(WPARAM wParam, LPARAM lParam) {
 
-	if (menuButtons[10] == menuButtonPressedBMP) {
+	if (menu_buttons_[10] == menu_button_pressed_BMP_) {
 		int action = DialogBox(GetModuleHandle(0), MAKEINTRESOURCE(IDD_MENU_DIALOG), handle, reinterpret_cast<DLGPROC>(DialogProc));
 		switch (action) {
 		case START:
 			sudoku.getRandomGrid(grid);
+			InvalidateRect(handle, NULL, TRUE);
 			break;
 		case RESTART:
 			sudoku.getPreviousGrid(grid);
+			InvalidateRect(handle, NULL, TRUE);
 			break;
 		case DEV:
 			MessageBox(handle, L"The game is created by Serg Popov", L"Developers", MB_OK);
@@ -155,23 +177,68 @@ void COverlappedWindow::On_LButtonUp(WPARAM wParam, LPARAM lParam) {
 		default:
 			break;
 		}
+
+		menu_buttons_[10] = menu_button_BMP_;
+		updateRect(menu_rects_[10]);
 	}
-	menuButtons[10] = menuButtonBMP;
+
 
 	for (int i = 0; i <= 9; ++i) {
-		if (menuButtons[i] == menuDigitsPressed[i] && isDigitPressed) {
+		if (menu_buttons_[i] == menu_digits_pressed_[i] && is_digit_pressed_) {
 
-			isDigitPressed = false;
-			grid[iPressed][jPressed] = i;
-
+			//is_digit_pressed_ = false;
+			grid[i_pressed_][j_pressed_] = i;
 		}
 
-		menuButtons[i] = menuDigits[i];
+		menu_buttons_[i] = menu_digits_[i];
+		updateRect(menu_rects_[i]);
+		updateRect(field_rects_[i_pressed_][j_pressed_]);
 	}
 
-	InvalidateRect(handle, NULL, TRUE);
 }
 
+void COverlappedWindow::On_WM_CHAR(WPARAM wParam, LPARAM lParam) {
+
+	if (is_digit_pressed_) {
+		if (wParam >= '0' && wParam <= '9') {
+			grid[i_pressed_][j_pressed_] = wParam - '0';
+		}
+	}
+
+	updateRect(field_rects_[i_pressed_][j_pressed_]);
+}
+
+void COverlappedWindow::On_WM_KEYDOWN(WPARAM wParam, LPARAM lParam) {
+
+	int i_pressed_prev = i_pressed_;
+	int j_pressed_prev = j_pressed_;
+
+
+
+	if (is_digit_pressed_) {
+		if (wParam == VK_RIGHT) {
+			i_pressed_ = (i_pressed_ + 1) % 9;
+		} else if (wParam == VK_DOWN) {
+			j_pressed_ = (j_pressed_ + 1) % 9;
+		} else if (wParam == VK_LEFT) {
+			i_pressed_ = (i_pressed_ - 1 + 9) % 9;
+		} else if (wParam == VK_UP) {
+			j_pressed_ = (j_pressed_ - 1 + 9) % 9;
+		} else if (wParam == VK_DELETE || wParam == VK_BACK) {
+			grid[i_pressed_][j_pressed_] = 0;
+		} 
+
+		updateRect(field_rects_[i_pressed_prev][j_pressed_prev]);
+
+	} else if (wParam == VK_RIGHT || wParam == VK_DOWN || wParam == VK_LEFT || wParam == VK_UP) {
+		i_pressed_ = 0;
+		j_pressed_ = 0;
+		is_digit_pressed_ = true;
+	}
+
+	updateRect(field_rects_[i_pressed_][j_pressed_]);
+
+}
 
 //menu messages
 void COverlappedWindow::OnInitMenuDialog(HWND hwndDlg) {
@@ -196,38 +263,49 @@ void COverlappedWindow::initData() {
 	//grid init
 	sudoku.getRandomGrid(grid);
 
-	isDigitPressed = false;
-	iPressed = 0;
-	jPressed = 0;
+	is_digit_pressed_ = false;
+	i_pressed_ = 0;
+	j_pressed_ = 0;
 
 	//menu buttons init
-	menuButtons.resize(11);
-	menuButtons[10] = menuButtonBMP;
+	menu_buttons_.resize(11);
+	menu_buttons_[10] = menu_button_BMP_;
 	for (int i = 0; i <= 9; ++i) {
-		menuButtons[i] = menuDigits[i];
+		menu_buttons_[i] = menu_digits_[i];
 	}
 
 	//menu rectangles init
-	menuRects.resize(11);
+	menu_rects_.resize(11);
 
 	RECT rect = {
-		winSize + (menuWidth / 2 - menuItemSize / 2),
-		(winSize - menuMarginBottom - menuMarginTop - 10 * menuItemSize) / 2 - menuItemSize / 2,
-		winSize + (menuWidth / 2 - menuItemSize / 2) + menuItemSize,
-		(winSize - menuMarginBottom - menuMarginTop - 10 * menuItemSize) / 2 + menuItemSize / 2 };
+		win_size_ + (menu_width_ / 2 - menu_item_size_ / 2),
+		(win_size_ - menu_margin_bottom_ - menu_margin_top_ - 10 * menu_item_size_) / 2 - menu_item_size_ / 2,
+		win_size_ + (menu_width_ / 2 - menu_item_size_ / 2) + menu_item_size_,
+		(win_size_ - menu_margin_bottom_ - menu_margin_top_ - 10 * menu_item_size_) / 2 + menu_item_size_ / 2 };
 
-	menuRects[10] = rect;
+	menu_rects_[10] = rect;
 
 	for (int i = 0; i <= 9; ++i) {
 		RECT rect = {
-			winSize + (menuWidth / 2 - menuItemSize / 2),
-			winSize - menuMarginBottom - 10 * menuItemSize + i * menuItemSize,
-			winSize + (menuWidth / 2 - menuItemSize / 2) + menuItemSize,
-			winSize - menuMarginBottom - 10 * menuItemSize + i * menuItemSize + menuItemSize };
+			win_size_ + (menu_width_ / 2 - menu_item_size_ / 2),
+			win_size_ - menu_margin_bottom_ - 10 * menu_item_size_ + i * menu_item_size_,
+			win_size_ + (menu_width_ / 2 - menu_item_size_ / 2) + menu_item_size_,
+			win_size_ - menu_margin_bottom_ - 10 * menu_item_size_ + i * menu_item_size_ + menu_item_size_ };
 
-		menuRects[i] = rect;
+		menu_rects_[i] = rect;
 	}
 
+
+	field_rects_ = std::vector<std::vector<RECT> >(9, std::vector<RECT>(9, RECT()));
+
+	for (int i = 0; i < 9; ++i) {
+		for (int j = 0; j < 9; ++j) {
+			field_rects_[i][j].top = j * cell_size_;
+			field_rects_[i][j].bottom = (j + 1) * cell_size_;
+			field_rects_[i][j].left = i * cell_size_;
+			field_rects_[i][j].right = (i + 1) * cell_size_;
+		}
+	}
 }
 
 void COverlappedWindow::getClientRect(long &width, long &height) {
@@ -242,55 +320,55 @@ void COverlappedWindow::getClientRect(long &width, long &height) {
 void COverlappedWindow::loadResources() {
 
 	digits.resize(10);
-	digits[0] = (HBITMAP)LoadImage(NULL, L"res\\0.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digits[1] = (HBITMAP)LoadImage(NULL, L"res\\1.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digits[2] = (HBITMAP)LoadImage(NULL, L"res\\2.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digits[3] = (HBITMAP)LoadImage(NULL, L"res\\3.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digits[4] = (HBITMAP)LoadImage(NULL, L"res\\4.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digits[5] = (HBITMAP)LoadImage(NULL, L"res\\5.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digits[6] = (HBITMAP)LoadImage(NULL, L"res\\6.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digits[7] = (HBITMAP)LoadImage(NULL, L"res\\7.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digits[8] = (HBITMAP)LoadImage(NULL, L"res\\8.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digits[9] = (HBITMAP)LoadImage(NULL, L"res\\9.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
+	digits[0] = (HBITMAP)LoadImage(NULL, L"res\\0.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits[1] = (HBITMAP)LoadImage(NULL, L"res\\1.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits[2] = (HBITMAP)LoadImage(NULL, L"res\\2.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits[3] = (HBITMAP)LoadImage(NULL, L"res\\3.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits[4] = (HBITMAP)LoadImage(NULL, L"res\\4.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits[5] = (HBITMAP)LoadImage(NULL, L"res\\5.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits[6] = (HBITMAP)LoadImage(NULL, L"res\\6.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits[7] = (HBITMAP)LoadImage(NULL, L"res\\7.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits[8] = (HBITMAP)LoadImage(NULL, L"res\\8.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits[9] = (HBITMAP)LoadImage(NULL, L"res\\9.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
 
-	digitsPressed.resize(10);
-	digitsPressed[0] = (HBITMAP)LoadImage(NULL, L"res\\0_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digitsPressed[1] = (HBITMAP)LoadImage(NULL, L"res\\1_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digitsPressed[2] = (HBITMAP)LoadImage(NULL, L"res\\2_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digitsPressed[3] = (HBITMAP)LoadImage(NULL, L"res\\3_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digitsPressed[4] = (HBITMAP)LoadImage(NULL, L"res\\4_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digitsPressed[5] = (HBITMAP)LoadImage(NULL, L"res\\5_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digitsPressed[6] = (HBITMAP)LoadImage(NULL, L"res\\6_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digitsPressed[7] = (HBITMAP)LoadImage(NULL, L"res\\7_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digitsPressed[8] = (HBITMAP)LoadImage(NULL, L"res\\8_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
-	digitsPressed[9] = (HBITMAP)LoadImage(NULL, L"res\\9_pressed.bmp", IMAGE_BITMAP, cellSize, cellSize, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_.resize(10);
+	digits_pressed_[0] = (HBITMAP)LoadImage(NULL, L"res\\0_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_[1] = (HBITMAP)LoadImage(NULL, L"res\\1_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_[2] = (HBITMAP)LoadImage(NULL, L"res\\2_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_[3] = (HBITMAP)LoadImage(NULL, L"res\\3_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_[4] = (HBITMAP)LoadImage(NULL, L"res\\4_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_[5] = (HBITMAP)LoadImage(NULL, L"res\\5_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_[6] = (HBITMAP)LoadImage(NULL, L"res\\6_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_[7] = (HBITMAP)LoadImage(NULL, L"res\\7_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_[8] = (HBITMAP)LoadImage(NULL, L"res\\8_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
+	digits_pressed_[9] = (HBITMAP)LoadImage(NULL, L"res\\9_pressed.bmp", IMAGE_BITMAP, cell_size_, cell_size_, LR_LOADFROMFILE | LR_SHARED);
 
-	menuDigits.resize(10);
-	menuDigits[0] = (HBITMAP)LoadImage(NULL, L"res\\circled_0.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigits[1] = (HBITMAP)LoadImage(NULL, L"res\\circled_1.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigits[2] = (HBITMAP)LoadImage(NULL, L"res\\circled_2.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigits[3] = (HBITMAP)LoadImage(NULL, L"res\\circled_3.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigits[4] = (HBITMAP)LoadImage(NULL, L"res\\circled_4.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigits[5] = (HBITMAP)LoadImage(NULL, L"res\\circled_5.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigits[6] = (HBITMAP)LoadImage(NULL, L"res\\circled_6.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigits[7] = (HBITMAP)LoadImage(NULL, L"res\\circled_7.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigits[8] = (HBITMAP)LoadImage(NULL, L"res\\circled_8.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigits[9] = (HBITMAP)LoadImage(NULL, L"res\\circled_9.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_.resize(10);
+	menu_digits_[0] = (HBITMAP)LoadImage(NULL, L"res\\circled_0.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_[1] = (HBITMAP)LoadImage(NULL, L"res\\circled_1.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_[2] = (HBITMAP)LoadImage(NULL, L"res\\circled_2.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_[3] = (HBITMAP)LoadImage(NULL, L"res\\circled_3.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_[4] = (HBITMAP)LoadImage(NULL, L"res\\circled_4.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_[5] = (HBITMAP)LoadImage(NULL, L"res\\circled_5.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_[6] = (HBITMAP)LoadImage(NULL, L"res\\circled_6.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_[7] = (HBITMAP)LoadImage(NULL, L"res\\circled_7.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_[8] = (HBITMAP)LoadImage(NULL, L"res\\circled_8.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_[9] = (HBITMAP)LoadImage(NULL, L"res\\circled_9.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
 
-	menuDigitsPressed.resize(10);
-	menuDigitsPressed[0] = (HBITMAP)LoadImage(NULL, L"res\\circled_0_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigitsPressed[1] = (HBITMAP)LoadImage(NULL, L"res\\circled_1_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigitsPressed[2] = (HBITMAP)LoadImage(NULL, L"res\\circled_2_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigitsPressed[3] = (HBITMAP)LoadImage(NULL, L"res\\circled_3_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigitsPressed[4] = (HBITMAP)LoadImage(NULL, L"res\\circled_4_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigitsPressed[5] = (HBITMAP)LoadImage(NULL, L"res\\circled_5_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigitsPressed[6] = (HBITMAP)LoadImage(NULL, L"res\\circled_6_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigitsPressed[7] = (HBITMAP)LoadImage(NULL, L"res\\circled_7_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigitsPressed[8] = (HBITMAP)LoadImage(NULL, L"res\\circled_8_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuDigitsPressed[9] = (HBITMAP)LoadImage(NULL, L"res\\circled_9_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_.resize(10);
+	menu_digits_pressed_[0] = (HBITMAP)LoadImage(NULL, L"res\\circled_0_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_[1] = (HBITMAP)LoadImage(NULL, L"res\\circled_1_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_[2] = (HBITMAP)LoadImage(NULL, L"res\\circled_2_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_[3] = (HBITMAP)LoadImage(NULL, L"res\\circled_3_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_[4] = (HBITMAP)LoadImage(NULL, L"res\\circled_4_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_[5] = (HBITMAP)LoadImage(NULL, L"res\\circled_5_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_[6] = (HBITMAP)LoadImage(NULL, L"res\\circled_6_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_[7] = (HBITMAP)LoadImage(NULL, L"res\\circled_7_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_[8] = (HBITMAP)LoadImage(NULL, L"res\\circled_8_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_digits_pressed_[9] = (HBITMAP)LoadImage(NULL, L"res\\circled_9_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
 
-	menuButtonBMP = (HBITMAP)LoadImage(NULL, L"res\\menu_button.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
-	menuButtonPressedBMP = (HBITMAP)LoadImage(NULL, L"res\\menu_button_pressed.bmp", IMAGE_BITMAP, menuItemSize, menuItemSize, LR_LOADFROMFILE | LR_SHARED);
+	menu_button_BMP_ = (HBITMAP)LoadImage(NULL, L"res\\menu_button.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
+	menu_button_pressed_BMP_ = (HBITMAP)LoadImage(NULL, L"res\\menu_button_pressed.bmp", IMAGE_BITMAP, menu_item_size_, menu_item_size_, LR_LOADFROMFILE | LR_SHARED);
 
 	
 }
@@ -299,14 +377,14 @@ void COverlappedWindow::drawGrid(HDC hdc) {
 
 	for (int i = 0; i < 9; ++i) {
 		for (int j = 0; j < 9; ++j) {
-			int x = i * cellSize;
-			int y = j * cellSize;
+			int x = i * cell_size_;
+			int y = j * cell_size_;
 			drawBitmap(hdc, x, y, digits[grid[i][j]], false);
 		}
 	}
 
-	if (isDigitPressed) {
-		drawBitmap(hdc, iPressed * cellSize, jPressed * cellSize, digitsPressed[grid[iPressed][jPressed]], false);
+	if (is_digit_pressed_) {
+		drawBitmap(hdc, i_pressed_ * cell_size_, j_pressed_ * cell_size_, digits_pressed_[grid[i_pressed_][j_pressed_]], false);
 	}
 
 	drawField(hdc);
@@ -322,11 +400,11 @@ void COverlappedWindow::drawField(HDC hdc) {
 	HPEN pen = CreatePen(PS_SOLID, 4, RGB(0, 0, 0));
 	SelectObject(hdc, pen);
 
-	for (int coord = 0; coord <= cellSize * 9; coord += cellSize * 3) {
+	for (int coord = 0; coord <= cell_size_ * 9; coord += cell_size_ * 3) {
 		MoveToEx(hdc, coord, 0, NULL);
-		LineTo(hdc, coord, winSize);
+		LineTo(hdc, coord, win_size_);
 		MoveToEx(hdc, 0, coord, NULL);
-		LineTo(hdc, winSize, coord);
+		LineTo(hdc, win_size_, coord);
 	}
 
 	DeleteObject(pen);
@@ -335,14 +413,14 @@ void COverlappedWindow::drawField(HDC hdc) {
 	pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
 	SelectObject(hdc, pen);
 
-	for (int coord = 0; coord <= cellSize * 9; coord += cellSize) {
-		if (coord % (cellSize * 3) == 0) {
+	for (int coord = 0; coord <= cell_size_ * 9; coord += cell_size_) {
+		if (coord % (cell_size_ * 3) == 0) {
 			continue;
 		}
 		MoveToEx(hdc, coord, 0, NULL);
-		LineTo(hdc, coord, winSize);
+		LineTo(hdc, coord, win_size_);
 		MoveToEx(hdc, 0, coord, NULL);
-		LineTo(hdc, winSize, coord);
+		LineTo(hdc, win_size_, coord);
 	}
 
 	DeleteObject(pen);
@@ -353,13 +431,13 @@ void COverlappedWindow::drawMenu(HDC hdc) {
 
 	HBRUSH brush = CreateSolidBrush(RGB(0, 0, 0));
 	SelectObject(hdc, brush);
-	Rectangle(hdc, winSize, 0, winSize + menuWidth, winSize);
+	Rectangle(hdc, win_size_, 0, win_size_ + menu_width_, win_size_);
 	DeleteObject(brush);
 
-	drawBitmap(hdc, menuRects[10].left, menuRects[10].top, menuButtons[10], false);
+	drawBitmap(hdc, menu_rects_[10].left, menu_rects_[10].top, menu_buttons_[10], false);
 
 	for (int i = 0; i <= 9; i++) {
-		drawBitmap(hdc, menuRects[i].left, menuRects[i].top, menuButtons[i], false);
+		drawBitmap(hdc, menu_rects_[i].left, menu_rects_[i].top, menu_buttons_[i], false);
 	}
 }
 
@@ -434,6 +512,12 @@ void COverlappedWindow::ErrorExit(LPTSTR lpszFunction)
 	ExitProcess(dw);
 }
 
+void COverlappedWindow::updateRect(RECT &rect) {
+
+	InvalidateRect(handle, &rect, TRUE);
+
+}
+
 LRESULT __stdcall COverlappedWindow::windowProc(HWND handle, UINT message, WPARAM wParam, LPARAM lParam) {
 
 	static COverlappedWindow *window;
@@ -471,6 +555,14 @@ LRESULT __stdcall COverlappedWindow::windowProc(HWND handle, UINT message, WPARA
 	}
 	case WM_LBUTTONUP: {
 		window->On_LButtonUp(wParam, lParam);
+		return 0;
+	}
+	case WM_CHAR: {
+		window->On_WM_CHAR(wParam, lParam);
+		return 0;
+	}
+	case WM_KEYDOWN: {
+		window->On_WM_KEYDOWN(wParam, lParam);
 		return 0;
 	}
 	default: {
@@ -515,6 +607,7 @@ INT_PTR CALLBACK COverlappedWindow::DialogProc(HWND hwndDlg, UINT uMsg, WPARAM w
 		EndDialog(hwndDlg, NONE);
 		return TRUE;
 	case WM_PAINT: {
+		/*
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hwndDlg, &ps);
 
@@ -537,7 +630,7 @@ INT_PTR CALLBACK COverlappedWindow::DialogProc(HWND hwndDlg, UINT uMsg, WPARAM w
 		SelectObject(hdcMem, hbmOld);
 		DeleteDC(hdcMem);
 
-		EndPaint(hwndDlg, &ps);
+		EndPaint(hwndDlg, &ps);*/
 	}
 
 	}

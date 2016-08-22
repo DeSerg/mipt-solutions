@@ -26,6 +26,11 @@ protected:
 
 	void On_LButtonDown(WPARAM wParam, LPARAM lParam);
 	void On_LButtonUp(WPARAM wParam, LPARAM lParam);
+	void On_WM_CHAR(WPARAM wParam, LPARAM lParam);
+	void On_WM_KEYDOWN(WPARAM wParam, LPARAM lParam);
+	void On_WM_KEYUP(WPARAM wParam, LPARAM lParam);
+
+
 
 	void OnInitMenuDialog(HWND hwndDlg);
 	void OnMenuStart(HWND hwndDlg);
@@ -38,40 +43,34 @@ private:
 	enum Action { START, RESTART, DEV, NONE };
 
 	HWND handle;
-	int xEllipseOld;
-	int yEllipseOld;
-	int xEllipse;
-	int yEllipse;
 
 	std::vector<HBITMAP> digits;
-	std::vector<HBITMAP> digitsPressed;
-	std::vector<HBITMAP> menuDigits;
-	std::vector<HBITMAP> menuDigitsPressed;
-	HBITMAP menuButtonBMP, menuButtonPressedBMP;
+	std::vector<HBITMAP> digits_pressed_;
+	std::vector<HBITMAP> menu_digits_;
+	std::vector<HBITMAP> menu_digits_pressed_;
+	HBITMAP menu_button_BMP_, menu_button_pressed_BMP_;
 
-
-	int iPressed, jPressed;
-	bool isDigitPressed;
+	int i_pressed_, j_pressed_;
+	bool is_digit_pressed_;
 	Sudoku sudoku = Sudoku();
 	std::vector<std::vector<int>> grid;
-	std::vector<HBITMAP> menuButtons;
-	std::vector<RECT> menuRects;
+	std::vector<HBITMAP> menu_buttons_;
 
-	int fieldSize;
-	int cellSize = 75;
-	int menuItemSize = 55;
-	int winSize = cellSize * 9;
-	int menuWidth = cellSize * 1.5;
-	int menuMarginTop = 5;
-	int menuMarginBottom = 15;
+	//Rectangles for easyer calculations
+	std::vector<RECT> menu_rects_;
+	std::vector< std::vector<RECT> > field_rects_;
+
+	int field_size_;
+	int cell_size_ = 75;
+	int menu_item_size_ = 55;
+	int win_size_ = cell_size_ * 9;
+	int menu_width_ = cell_size_ * 1.5;
+	int menu_margin_top_ = 5;
+	int menu_margin_bottom_ = 15;
 
 
 	static const DWORD windowExStyle = 0;
 	static const DWORD windowStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
-
-	static const int Delta = 1;
-	static const int Radius = 30;
-	static const int TimerID = 10;
 
 	void initData();
 	void loadResources();
@@ -83,6 +82,7 @@ private:
 	void drawBitmap(HDC hdc, int x, int y, HBITMAP bitmap, bool redrawField = true);
 	void drawEllipse(HDC dc, int x, int y, COLORREF fillColor, COLORREF outlineColor);
 	void getClientRect(long &width, long &height);
+	void updateRect(RECT &rect);
 
 	void ErrorExit(LPTSTR lpszFunction);
 
