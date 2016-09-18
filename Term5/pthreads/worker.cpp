@@ -83,10 +83,8 @@ void performIteration(int begin_num, int cell_amount) {
 
 void sigHandler(int sigNum) {
     
-//    cout << "I AM BEING SIGNALLED!" << endl;
     pthread_mutex_lock(&signaled_handler_m);
     signaled = 1;
-//    cout << "SIGNALED IS NOW " << signaled << endl;
     pthread_mutex_unlock(&signaled_handler_m);
     
 }
@@ -104,11 +102,8 @@ void *startWork(void *raw_data) {
     int cell_amount = data->cell_amount;
     int thread_id = data->id;
     
-//    cout << "Thread #" << thread_id << " is working!" << endl;
-            
     for (int i = 1; i <= Y; ++i) {
         
-//        cout << "#" << thread_id << ": iteration " << i << endl;
         performIteration(begin_num, cell_amount);
         
         pthread_mutex_lock(&thread_count_m);
@@ -119,11 +114,8 @@ void *startWork(void *raw_data) {
         pthread_mutex_lock(&condition_m);
         
         if (thread_count_local == K) {
-//            cout << "#" << thread_id << " is the last in iteration " << i << endl;
             thread_iter_count = 0;
             swap(cur_table, cur_table_new);
-//            system("clear");
-//            drawTable(cur_table);
             usleep(1e6);
             pthread_cond_broadcast(&condition_var);
             
@@ -134,22 +126,16 @@ void *startWork(void *raw_data) {
             }
             
         } else {
-//            cout << "#" << thread_id << " is waiting..." << endl;
             pthread_cond_wait(&condition_var, &condition_m);
         }
         
-//        cout << "MY ASS IS #" << thread_id << endl;
         pthread_mutex_unlock(&condition_m);
         
         pthread_mutex_lock(&signaled_m);
-//        cout << "Sig val: " << signaled << endl;
-//        usleep(1e6);
         if (signaled == 1) {
-//            cout << "MY NAME IS #" << thread_id << endl;
             pthread_mutex_lock(&status_m);
             status = stopped;
             pthread_mutex_unlock(&status_m);            
-//            cout << "Thread #" << thread_id << " stopped at iteration " << i << endl;
             break;
         }
         pthread_mutex_unlock(&signaled_m);
