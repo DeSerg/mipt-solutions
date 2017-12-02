@@ -1,8 +1,5 @@
 # Chess Server by deserg
 
-## How to download
-  Just insert `git clone https://github.com/DeSerg/AKOS.git` in terminal and the server directory will arrive to your computer!
-
 ## How to start game
   To play chess you need to:
   * **run** `make` command in the directory you have cloned the Server!
