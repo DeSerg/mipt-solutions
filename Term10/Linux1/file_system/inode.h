@@ -7,13 +7,6 @@
 
 #include <system.h>
 
-typedef struct INode {
-
-
-    int sectorPointers[INODE_SECTOR_POINTER_NUM];
-
-} INode;
-
 
 
 #endif //FILE_SYSTEM_INODE_H
