@@ -4,9 +4,16 @@
 
 #include <inode.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 
-int ls(FILE *fd, char *filepath);
+bool prepare_fs(const char *filename);
+
+
+bool close_fs();
+
+
+int ls(char *filepath);
 
 
 int cat(FILE *fd, char *filepath);
