@@ -7,11 +7,15 @@
 
 #include <system.h>
 
+bool read_inode_bit_mask(bool *inode_bit_mask);
 
-bool read_inode(int fd, int index, inode_t *inode);
+bool update_inode_bit_mask(int ind, bool value);
 
-bool update_inode(int fd, int index, inode_t *inode);
 
-bool remove_inode(int fd, int index);
+bool read_inode(int index, inode_t *inode);
+
+bool update_inode(int index, inode_t *inode);
+
+bool remove_inode(int index);
 
 #endif //FILE_SYSTEM_INODE_H
