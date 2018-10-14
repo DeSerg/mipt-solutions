@@ -14,12 +14,20 @@ bool update_inode_bit_mask(int ind, bool value);
 
 bool clear_inode_bit_mask();
 
+bool get_free_inode(inode_t **inode);
+
+
 // sector bit mask
 bool read_sector_bit_mask();
 
 bool update_sector_bit_mask(int ind, bool value);
 
 bool clear_sector_bit_mask();
+
+int32_t get_sector_address_by_index(int32_t sector_index);
+bool get_free_sector_index(int32_t *sector_index);
+bool get_free_sector_address(int32_t *sector_address);
+
 
 // inode
 bool read_inode(int index, inode_t *inode);

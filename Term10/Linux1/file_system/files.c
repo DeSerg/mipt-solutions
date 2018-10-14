@@ -17,6 +17,15 @@ bool set_fd_to_start() {
     return true;
 }
 
+bool set_fd_to(int32_t offset) {
+    if (lseek(Fd, offset, SEEK_SET) == -1) {
+        fprintf(stderr, "files.cpp: set_fd_to: failed to set fd to offset %d", offset);
+        return false;
+    }
+
+    return true;
+}
+
 int64_t file_size(int fd) {
     struct stat st;
     if (fstat(fd, &st) == -1) {

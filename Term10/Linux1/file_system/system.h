@@ -13,11 +13,15 @@
 typedef struct inode_t {
 
     bool directory;
-    int32_t inode_address;
+    int32_t inode_index;
     int32_t dataSize;
     int32_t sectorPointers[INODE_SECTOR_POINTER_NUM];
 
+    // directory layout: int32_t (N = number of inodes); N * [int32_t (inode_address); char * (file name)], ...
+    // file layout: dataSize * [uint8_t (data)], ...
+
 } inode_t;
+
 
 typedef struct superblock_t {
 

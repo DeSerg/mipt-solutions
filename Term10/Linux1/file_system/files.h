@@ -13,6 +13,8 @@
 
 bool set_fd_to_start();
 
+bool set_fd_to(int32_t offset);
+
 int64_t file_size(int fd);
 
 int truncate_file(int fd, int64_t file_size);
