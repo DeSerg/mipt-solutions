@@ -7,11 +7,11 @@ INCLUDE_DIRECTORIES("${BASEPATH}")
 set(CMAKE_C_STANDARD 99)
 
 set(SOURCES
-        inode.h
+        superblock.h
         system.h
         system.c
         mini_fs.h
         mini_fs.c
-        files.c files.h inode.cpp)
+        files.c files.h superblock.cpp inode.cpp inode.h)
 
 add_executable(file_system main.c ${SOURCES})

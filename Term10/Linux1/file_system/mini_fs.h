@@ -2,7 +2,7 @@
 #ifndef FILE_SYSTEM_MINI_FS_H
 #define FILE_SYSTEM_MINI_FS_H
 
-#include <inode.h>
+#include <superblock.h>
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -16,16 +16,16 @@ bool close_fs();
 int ls(char *filepath);
 
 
-int cat(FILE *fd, char *filepath);
+int cat(char *filepath);
 
 
-int touch(FILE *fd, char *filepath, char *data);
+int touch(char *filepath, char *data);
 
 
-int copy(FILE *fd, char *filepath_source, char *filepath_dest);
+int copy(char *filepath_source, char *filepath_dest);
 
 
-int move(FILE *fd, char *filepath_source, char *filepath_dest);
+int move(char *filepath_source, char *filepath_dest);
 
 
 #endif //FILE_SYSTEM_MINI_FS_H

@@ -12,6 +12,8 @@
 
 typedef struct inode_t {
 
+    bool directory;
+    int32_t inode_address;
     int32_t dataSize;
     int32_t sectorPointers[INODE_SECTOR_POINTER_NUM];
 
@@ -19,10 +21,10 @@ typedef struct inode_t {
 
 typedef struct superblock_t {
 
-    int8_t *inodes_used;
+    bool *inodes_used;
     inode_t *inodes;
 
-    int8_t *sectors_used;
+    bool *sectors_used;
 
 } superblock_t;
 

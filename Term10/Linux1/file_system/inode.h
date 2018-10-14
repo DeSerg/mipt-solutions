@@ -1,21 +1,24 @@
 //
-// Created by deserg on 30.09.18.
+// Created by deserg on 14/10/2018.
 //
 
 #ifndef FILE_SYSTEM_INODE_H
 #define FILE_SYSTEM_INODE_H
 
-#include <system.h>
+#include <superblock.h>
 
-bool read_inode_bit_mask(bool *inode_bit_mask);
+// directories
+bool directory_inodes(inode_t *directory, inode_t *directory_inodes);
 
-bool update_inode_bit_mask(int ind, bool value);
+bool directory_create(inode_t *parent, const char *directory_name);
 
+bool directory_remove(inode_t *directory);
 
-bool read_inode(int index, inode_t *inode);
+// files
+bool file_contents(inode_t *file, int8_t *bytes);
 
-bool update_inode(int index, inode_t *inode);
+bool file_create(inode_t *parent, const char *file_name, const int8_t *bytes);
 
-bool remove_inode(int index);
+bool file_remove(inode_t *file);
 
 #endif //FILE_SYSTEM_INODE_H

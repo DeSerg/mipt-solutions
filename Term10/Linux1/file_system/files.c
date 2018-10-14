@@ -2,9 +2,20 @@
 // Created by deserg on 13/10/2018.
 //
 
-#include "files.h"
 #include <sys/stat.h>
 
+#include <files.h>
+#include <system.h>
+
+
+bool set_fd_to_start() {
+    if (lseek(Fd, 0, SEEK_SET) == -1) {
+        fprintf(stderr, "files.cpp: set_fd_to_start: failed to set fd to file begin");
+        return false;
+    }
+
+    return true;
+}
 
 int64_t file_size(int fd) {
     struct stat st;

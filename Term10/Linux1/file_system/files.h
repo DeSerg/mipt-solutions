@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdbool.h>
 
+bool set_fd_to_start();
 
 int64_t file_size(int fd);
 
