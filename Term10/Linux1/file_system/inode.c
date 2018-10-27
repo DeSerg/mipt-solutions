@@ -6,7 +6,7 @@
 
 #include <files.h>
 #include <superblock.h>
-#include "system.h"
+#include <system.h>
 
 // helping methods
 int32_t sectors_num_(int32_t bytes_num) {
@@ -15,7 +15,7 @@ int32_t sectors_num_(int32_t bytes_num) {
 
 bool read_inode_data(inode_t *directory, uint8_t **bytes) {
 
-    *bytes = (int8_t *)calloc(directory->dataSize, sizeof(uint8_t));
+    *bytes = (uint8_t *)calloc(directory->dataSize, sizeof(uint8_t));
 
     int32_t sectors_num = sectors_num_(directory->dataSize);
 
@@ -25,14 +25,14 @@ bool read_inode_data(inode_t *directory, uint8_t **bytes) {
         int32_t bytes_to_read = (bytes_left / SECTOR_SIZE > 0) ? SECTOR_SIZE : bytes_left;
 
         if (!set_fd_to(directory->sectorPointers[i])) {
-            fprintf(stderr, "inode.cpp: directory_inodes: failed to set fd to sector %d start", i);
+            fprintf(stderr, "inode.cpp: directory_inodes: failed to set fd to sector %d start\n", i);
             return false;
         }
 
         size_t bytes_read = read(Fd, *bytes + bytes_already_read, bytes_to_read);
         if (bytes_read != bytes_to_read) {
             fprintf(stderr, "inode.cpp: directory_inodes: "
-                            "failed read %d sector: read %d bytes instead of %d", i, bytes_read, bytes_to_read);
+                            "failed read %d sector: read %d bytes instead of %d\n", i, bytes_read, bytes_to_read);
             return false;
         }
     }
@@ -42,13 +42,13 @@ bool read_inode_data(inode_t *directory, uint8_t **bytes) {
 
 bool allocate_data(int32_t bytes_num, uint8_t *bytes, int32_t *sectors_num, int32_t **sector_indeces) {
 
-    *sectors_num = sectors_num_(bytes_left_to_write);
-    *sector_indeces = (int32_t *)calloc(sectors_num, sizeof(int32_t));
+    *sectors_num = sectors_num_(bytes_num);
+    *sector_indeces = (int32_t *)calloc(*sectors_num, sizeof(int32_t));
 
-    for (int i = 0; i < sectors_num; ++i) {
-        if (!get_free_sector_index(sector_indeces + i)) {
+    for (int i = 0; i < *sectors_num; ++i) {
+        if (!get_free_sector_index(*sector_indeces + i)) {
             free(sector_indeces);
-            fprintf(stderr, "inode.cpp: allocate_data: failed get free sector index");
+            fprintf(stderr, "inode.cpp: allocate_data: failed get free sector index\n");
             return false;
         }
 
@@ -56,18 +56,18 @@ bool allocate_data(int32_t bytes_num, uint8_t *bytes, int32_t *sectors_num, int3
         int32_t bytes_left = bytes_num - bytes_already_written;
         int32_t bytes_to_write = (bytes_left / SECTOR_SIZE > 0) ? SECTOR_SIZE : bytes_left;
 
-        int32_t sector_address = get_sector_address_by_index(sector_indeces[i]);
+        int32_t sector_address = get_sector_address_by_index((*sector_indeces)[i]);
         if (!set_fd_to(sector_address)) {
             free(sector_indeces);
-            fprintf(stderr, "inode.cpp: allocate_data: failed to move fd position to %d", sector_address);
+            fprintf(stderr, "inode.cpp: allocate_data: failed to move fd position to %d\n", sector_address);
             return false;
         }
 
-        bytes_written = write(Fd, bytes, bytes_to_write);
+        int bytes_written = (int)write(Fd, bytes, bytes_to_write);
         if (bytes_written != bytes_to_write) {
             free(sector_indeces);
             fprintf(stderr, "inode.cpp: allocate_data: failed to write data to %d sector: written "
-                        "%d instead of %d bytes", sector_indeces[i], bytes_written, bytes_to_write);
+                        "%d instead of %d bytes\n", (*sector_indeces)[i], bytes_written, bytes_to_write);
             return false;
         }
 
@@ -81,7 +81,7 @@ bool allocate_data(int32_t bytes_num, uint8_t *bytes, int32_t *sectors_num, int3
 bool append_inode_data(inode_t *inode, int32_t bytes_num, uint8_t *bytes) {
 
     if (!bytes_num) {
-        printf("inode.cpp: append_inode_data: zero bytes array passed");
+        printf("inode.cpp: append_inode_data: zero bytes array passed\n");
         return true;
     }
 
@@ -102,14 +102,14 @@ bool append_inode_data(inode_t *inode, int32_t bytes_num, uint8_t *bytes) {
 
     // allocate data in the last existing sector of inode
     if (!set_fd_to(inode->sectorPointers[last_sector_ind])) {
-        fprintf(stderr, "inode.cpp: append_inode_data: failed to set fd to sector %d start", last_sector_ind);
+        fprintf(stderr, "inode.cpp: append_inode_data: failed to set fd to sector %d start\n", last_sector_ind);
         return false;
     }
 
-    int32_t bytes_written = write(Fd, bytes, bytes_in_last_sector_to_write);
+    int32_t bytes_written = (int32_t)write(Fd, bytes, bytes_in_last_sector_to_write);
     if (bytes_written != bytes_in_last_sector_to_write) {
         fprintf(stderr, "inode.cpp: append_inode_data: failed to write data to %d sector: written "
-                        "%d instead of %d bytes", last_sector_ind,  bytes_written, bytes_in_last_sector_to_write);
+                        "%d instead of %d bytes\n", last_sector_ind,  bytes_written, bytes_in_last_sector_to_write);
         return false;
     }
 
@@ -123,7 +123,7 @@ bool append_inode_data(inode_t *inode, int32_t bytes_num, uint8_t *bytes) {
     int32_t sectors_num = 0;
     int32_t *sector_indeces = NULL;
     if (!allocate_data(bytes_left_to_write, bytes, &sectors_num, &sector_indeces)) {
-        fprintf(stderr, "inode.cpp: append_inode_data: failed allocated data");
+        fprintf(stderr, "inode.cpp: append_inode_data: failed allocated data\n");
         return false;
     }
 
@@ -132,7 +132,7 @@ bool append_inode_data(inode_t *inode, int32_t bytes_num, uint8_t *bytes) {
     if (total_sectors_num >= INODE_SECTOR_POINTER_NUM) {
         free(sector_indeces);
         fprintf(stderr, "inode.cpp: append_inode_data: not enough pointers for sectors: "
-                        "%d needed, %d actual", total_sectors_num, INODE_SECTOR_POINTER_NUM);
+                        "%d needed, %d actual\n", total_sectors_num, INODE_SECTOR_POINTER_NUM);
         return false;
     }
 
@@ -141,11 +141,11 @@ bool append_inode_data(inode_t *inode, int32_t bytes_num, uint8_t *bytes) {
         inode->sectorPointers[sector_ind] = get_sector_address_by_index(sector_indeces[i]);
         if (!update_sector_bit_mask(sector_indeces[i], true)) {
             for (int j = 0; j < i; ++j) {
-                update_sector_bit_mask(sector_indeces[j], false)
+                update_sector_bit_mask(sector_indeces[j], false);
             }
             free(sector_indeces);
             fprintf(stderr, "inode.cpp: append_inode_data: failed to "
-                            "update sector bit mask for index %d", sector_indeces[i]);
+                            "update sector bit mask for index %d\n", sector_indeces[i]);
             return false;
         }
     }
@@ -171,14 +171,14 @@ bool append_inode_data(inode_t *inode, int32_t bytes_num, uint8_t *bytes) {
 bool directory_inodes(inode_t *directory, int32_t *inodes_count, inode_t **inodes, char ***filenames) {
 
     if (!directory->directory) {
-        fprintf(stderr, "inode.cpp: directory_inodes: inode is not a directory!");
+        fprintf(stderr, "inode.cpp: directory_inodes: inode is not a directory!\n");
         return false;
     }
 
     uint8_t *bytes = NULL;
     if (!read_inode_data(directory, &bytes)) {
         free(bytes);
-        fprintf(stderr, "inode.cpp: directory_inodes: failed to set read inode data");
+        fprintf(stderr, "inode.cpp: directory_inodes: failed to set read inode data\n");
         return false;
     }
 
@@ -188,12 +188,12 @@ bool directory_inodes(inode_t *directory, int32_t *inodes_count, inode_t **inode
     *filenames = (char **)calloc(*inodes_count, sizeof(char *));
 
     uint8_t *bytes_current = bytes + 4;
-    for (int i = 0; i < inode_number; ++i) {
+    for (int i = 0; i < *inodes_count; ++i) {
         memcpy(*inodes + i, (int32_t *)bytes_current, sizeof(int32_t));
         bytes_current += 4;
 
         char *filename = (char *)bytes_current;
-        int str_length = strlen(filename) + 1;
+        int str_length = (int)strlen(filename) + 1;
         bytes_current += str_length;
 
         (*filenames)[i] = calloc(str_length, sizeof(char));
@@ -208,7 +208,7 @@ bool directory_create(inode_t *parent, const char *directory_name) {
 
     inode_t *inode_free = NULL;
     if (!get_free_inode(&inode_free)) {
-        fprintf(stderr, "inode.cpp: directory_create: failed to get free inode");
+        fprintf(stderr, "inode.cpp: directory_create: failed to get free inode\n");
         return false;
     }
 
@@ -220,7 +220,7 @@ bool directory_create(inode_t *parent, const char *directory_name) {
 
     bool success = append_inode_data(parent, directory_info_size, directory_info);
     if (!success) {
-        fprintf(stderr, "inode.cpp: directory_create: failed to append new data to inode");
+        fprintf(stderr, "inode.cpp: directory_create: failed to append new data to inode\n");
     }
 
     free(directory_info);
@@ -233,12 +233,12 @@ bool parse_path(const char *path, int32_t *filenames_count, char ***filenames) {
 
     int path_len = (int)strlen(path);
     if (path_len == 0) {
-        fprintf(stderr, "inode.cpp: parse_path: empty path");
+        fprintf(stderr, "inode.cpp: parse_path: empty path\n");
         return false;
     }
 
     if (path[0] != '/') {
-        fprintf(stderr, "inode.cpp: parse_path: path must start with root: /");
+        fprintf(stderr, "inode.cpp: parse_path: path must start with root: /\n");
         return false;
     }
 
@@ -265,67 +265,66 @@ bool parse_path(const char *path, int32_t *filenames_count, char ***filenames) {
 bool get_inode_child_by_filename(inode_t *parent, const char *filename, inode_t *child) {
 
     if (parent->dataSize < 4) {
-        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid parent data size: %d", parent->dataSize);
+        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid parent data size: %d\n", parent->dataSize);
         return false;
     }
 
     uint8_t *bytes = NULL;
     if (!read_inode_data(parent, &bytes)) {
-        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: failed to read inode data");
+        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: failed to read inode data\n");
         free(bytes);
         return false;
     }
 
     uint8_t *bytes_ptr = bytes;
-    int32_t *inodes_num = bytes_ptr;
+    int32_t *inodes_num = (int32_t *)bytes_ptr;
     bytes_ptr += 4;
     if (*inodes_num < 0 || *inodes_num > parent->dataSize) {
-        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid inodes_num: %d", *inodes_num);
+        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid inodes_num: %d\n", *inodes_num);
         free(bytes);
         return false;
     }
 
     if (parent->dataSize < 4 + 4 * *inodes_num) {
-        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid parent data size: %d", parent->dataSize);
+        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid parent data size: %d\n", parent->dataSize);
         free(bytes);
         return false;
     }
 
     for (int i = 0; i < *inodes_num; ++i) {
         if (parent->dataSize < bytes_ptr - bytes + 5) {
-            fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid parent data size: %d", parent->dataSize);
+            fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid parent data size: %d\n", parent->dataSize);
             free(bytes);
             return false;
         }
 
-        int32_t *inode_index = bytes_ptr;
+        int32_t *inode_index = (int32_t *)bytes_ptr;
         if (*inode_index < 0 || *inode_index >= INODE_NUM) {
-            fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid inode index: %d", inode_index);
+            fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid inode index: %d\n", inode_index);
             free(bytes);
             return false;
         }
 
         bytes_ptr += 4;
-        char *inode_filename = bytes_ptr;
+        char *inode_filename = (char *)bytes_ptr;
 
-        int bytes_left = parent->dataSize - (bytes_ptr - bytes);
-
-        int len = (int)strnlen_s(inode_filename, bytes_left);
-        if (len == 0 || len == bytes_left) {
-            fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid inode filename");
+        int bytes_left = parent->dataSize - ((int)bytes_ptr - (int)bytes);
+        int len = (int)strlen(inode_filename);
+        if (len == 0 || len >= bytes_left) {
+            fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid inode filename\n");
             free(bytes);
             return false;
         }
 
         if (strcmp(filename, inode_filename) == 0) {
-            read_inode(inode_index, child);
+            read_inode(*inode_index, child);
             free(bytes);
             return true;
         }
     }
 
     free(bytes);
-    printf("inode.cpp: get_inode_child_by_filename: childe inode was not found for name %s...", filename);
+    printf("inode.cpp: get_inode_child_by_filename: childe inode was not found for name %s...\n", filename);
     return false;
 }
 
@@ -343,12 +342,12 @@ bool get_inode_for_path(const char *path, inode_t **inode) {
 
     int path_len = (int)strlen(path);
     if (path_len == 0) {
-        fprintf(stderr, "inode.cpp: get_inode_for_path: empty path");
+        fprintf(stderr, "inode.cpp: get_inode_for_path: empty path\n");
         return false;
     }
 
     if (path[0] != '/') {
-        fprintf(stderr, "inode.cpp: get_inode_for_path: path must start with root: /");
+        fprintf(stderr, "inode.cpp: get_inode_for_path: path must start with root: /\n");
         return false;
     }
 
@@ -357,7 +356,7 @@ bool get_inode_for_path(const char *path, inode_t **inode) {
 
     if (path_len == 1) {
         // root node requested
-        *inode = *cur_inode;
+        *inode = cur_inode;
         return true;
     }
 
@@ -374,7 +373,7 @@ bool get_inode_for_path(const char *path, inode_t **inode) {
         memcpy(filename, path + ind, right_ind - ind);
         filename[right_ind - ind + 1] = 0;
         if (!get_inode_child_by_filename(cur_inode, filename, next_inode)) {
-            fprintf(stderr, "inode.cpp: get_inode_for_path: inode for filename %s was not found...", filename);
+            fprintf(stderr, "inode.cpp: get_inode_for_path: inode for filename %s was not found...\n", filename);
             free(cur_inode);
             free(next_inode);
             return false;
@@ -389,6 +388,6 @@ bool get_inode_for_path(const char *path, inode_t **inode) {
     }
 
     free(next_inode);
-    *inode = *cur_inode
+    *inode = cur_inode;
     return true;
 }

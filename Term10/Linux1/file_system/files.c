@@ -10,7 +10,7 @@
 
 bool set_fd_to_start() {
     if (lseek(Fd, 0, SEEK_SET) == -1) {
-        fprintf(stderr, "files.cpp: set_fd_to_start: failed to set fd to file begin");
+        fprintf(stderr, "files.cpp: set_fd_to_start: failed to set fd to file begin\n");
         return false;
     }
 
@@ -19,7 +19,7 @@ bool set_fd_to_start() {
 
 bool set_fd_to(int32_t offset) {
     if (lseek(Fd, offset, SEEK_SET) == -1) {
-        fprintf(stderr, "files.cpp: set_fd_to: failed to set fd to offset %d", offset);
+        fprintf(stderr, "files.cpp: set_fd_to: failed to set fd to offset %d\n", offset);
         return false;
     }
 
@@ -42,7 +42,7 @@ int truncate_file(int fd, int64_t file_size) {
         return -1;
     }
     if (ftruncate(fd, file_size) == -1) {
-        fprintf(stderr, "files.c: truncate_file: failed to truncate to %lld bytes", file_size);
+        fprintf(stderr, "files.c: truncate_file: failed to truncate to %lld bytes\n", file_size);
         return -1;
     }
 

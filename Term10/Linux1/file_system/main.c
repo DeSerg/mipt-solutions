@@ -48,7 +48,7 @@ bool parse_command(const char *full_command, char *command, char **args, int *ar
         index = index_last;
 
         if (*arguments_num >= MAX_ARG_NUM) {
-            fprintf(stderr, "main.c: parse_command: too much arguments: %d", *arguments_num);
+            fprintf(stderr, "main.c: parse_command: too much arguments: %d\n", *arguments_num);
             break;
         }
 
@@ -73,7 +73,7 @@ void obtain_commands() {
         if (!strcmp(command, "ls"))
         {
             if (arguments_num != 1) {
-                printf("Usage: ls [file]");
+                printf("Usage: ls [file]\n");
                 continue;
             }
 
@@ -81,7 +81,7 @@ void obtain_commands() {
 
         } else if (!strcmp(command, "mkdir")) {
             if (arguments_num != 1) {
-                printf("Usage: mkdir [path]");
+                printf("Usage: mkdir [path]\n");
                 continue;
             }
 
@@ -99,14 +99,14 @@ void obtain_commands() {
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        printf("Please pass file system file as 1st argument");
+        printf("Please pass file system file as 1st argument\n");
         return 1;
     }
 
     const char *mini_fs_filepath = argv[1];
     if (!prepare_fs(mini_fs_filepath)) {
-        fprintf(stderr, "Failed to open mini_fs file %s", mini_fs_filepath);
-        return -1;
+        fprintf(stderr, "Failed to open mini_fs file %s\n", mini_fs_filepath);
+        return 1;
     }
 
     obtain_commands();
