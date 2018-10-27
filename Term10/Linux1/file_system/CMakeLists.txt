@@ -12,6 +12,6 @@ set(SOURCES
         system.c
         mini_fs.h
         mini_fs.c
-        files.c files.h superblock.cpp inode.cpp inode.h)
+        files.c files.h superblock.cpp inode.cpp inode.h tools.cpp tools.h)
 
 add_executable(file_system main.c ${SOURCES})

@@ -7,11 +7,6 @@
 
 #include <superblock.h>
 
-// general
-bool get_free_inode(inode_t **inode);
-
-bool read_inode_data(inode_t *directory, uint8_t *bytes);
-
 // directories
 bool directory_inodes(inode_t *directory, int32_t *inodes_count, inode_t **inodes, char ***filenames);
 
@@ -25,5 +20,8 @@ bool file_contents(inode_t *file, int32_t *bytes_num, uint8_t **bytes);
 bool file_create(inode_t *parent, const char *file_name, int32_t bytes_num, const uint8_t **bytes);
 
 bool file_remove(inode_t *file);
+
+// path
+bool get_inode_for_path(const char *path, inode_t **inode);
 
 #endif //FILE_SYSTEM_INODE_H

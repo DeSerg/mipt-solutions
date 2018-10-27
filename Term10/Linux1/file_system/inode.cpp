@@ -8,6 +8,7 @@
 #include <superblock.h>
 #include "system.h"
 
+// helping methods
 int32_t sectors_num_(int32_t bytes_num) {
     return (bytes_num - 1) / SECTOR_SIZE + 1;
 }
@@ -38,7 +39,6 @@ bool read_inode_data(inode_t *directory, uint8_t **bytes) {
 
     return true;
 }
-
 
 bool allocate_data(int32_t bytes_num, uint8_t *bytes, int32_t *sectors_num, int32_t **sector_indeces) {
 
@@ -156,6 +156,18 @@ bool append_inode_data(inode_t *inode, int32_t bytes_num, uint8_t *bytes) {
 
 }
 
+// directories
+/**
+ * Lists directory children as list of inodes and filenames
+ * Does not leave allocated memory on fail
+ * On success allocates inodes and filenames
+ *
+ * @param directory
+ * @param inodes_count
+ * @param inodes
+ * @param filenames
+ * @return
+ */
 bool directory_inodes(inode_t *directory, int32_t *inodes_count, inode_t **inodes, char ***filenames) {
 
     if (!directory->directory) {
@@ -214,4 +226,169 @@ bool directory_create(inode_t *parent, const char *directory_name) {
     free(directory_info);
     return success;
 
+}
+
+// path
+bool parse_path(const char *path, int32_t *filenames_count, char ***filenames) {
+
+    int path_len = (int)strlen(path);
+    if (path_len == 0) {
+        fprintf(stderr, "inode.cpp: parse_path: empty path");
+        return false;
+    }
+
+    if (path[0] != '/') {
+        fprintf(stderr, "inode.cpp: parse_path: path must start with root: /");
+        return false;
+    }
+
+    int ind = 1;
+    int right_ind = ind;
+    while (right_ind < path_len && path[right_ind] != '/')
+    {
+        ++right_ind;
+    }
+
+    return false;
+//    for (int i = 1; i < )
+}
+
+/**
+ * Reads inode for specified filename and parent
+ *
+ *
+ * @param parent
+ * @param filename
+ * @param child
+ * @return
+ */
+bool get_inode_child_by_filename(inode_t *parent, const char *filename, inode_t *child) {
+
+    if (parent->dataSize < 4) {
+        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid parent data size: %d", parent->dataSize);
+        return false;
+    }
+
+    uint8_t *bytes = NULL;
+    if (!read_inode_data(parent, &bytes)) {
+        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: failed to read inode data");
+        free(bytes);
+        return false;
+    }
+
+    uint8_t *bytes_ptr = bytes;
+    int32_t *inodes_num = bytes_ptr;
+    bytes_ptr += 4;
+    if (*inodes_num < 0 || *inodes_num > parent->dataSize) {
+        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid inodes_num: %d", *inodes_num);
+        free(bytes);
+        return false;
+    }
+
+    if (parent->dataSize < 4 + 4 * *inodes_num) {
+        fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid parent data size: %d", parent->dataSize);
+        free(bytes);
+        return false;
+    }
+
+    for (int i = 0; i < *inodes_num; ++i) {
+        if (parent->dataSize < bytes_ptr - bytes + 5) {
+            fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid parent data size: %d", parent->dataSize);
+            free(bytes);
+            return false;
+        }
+
+        int32_t *inode_index = bytes_ptr;
+        if (*inode_index < 0 || *inode_index >= INODE_NUM) {
+            fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid inode index: %d", inode_index);
+            free(bytes);
+            return false;
+        }
+
+        bytes_ptr += 4;
+        char *inode_filename = bytes_ptr;
+
+        int bytes_left = parent->dataSize - (bytes_ptr - bytes);
+
+        int len = (int)strnlen_s(inode_filename, bytes_left);
+        if (len == 0 || len == bytes_left) {
+            fprintf(stderr, "inode.cpp: get_inode_child_by_filename: invalid inode filename");
+            free(bytes);
+            return false;
+        }
+
+        if (strcmp(filename, inode_filename) == 0) {
+            read_inode(inode_index, child);
+            free(bytes);
+            return true;
+        }
+    }
+
+    free(bytes);
+    printf("inode.cpp: get_inode_child_by_filename: childe inode was not found for name %s...", filename);
+    return false;
+}
+
+
+/**
+ * Reads inode for specified path
+ * Does not leave allocated memory on fail
+ * Allocates sizeof(inode_t) bytes on success at *inode
+ *
+ * @param path
+ * @param inode
+ * @return
+ */
+bool get_inode_for_path(const char *path, inode_t **inode) {
+
+    int path_len = (int)strlen(path);
+    if (path_len == 0) {
+        fprintf(stderr, "inode.cpp: get_inode_for_path: empty path");
+        return false;
+    }
+
+    if (path[0] != '/') {
+        fprintf(stderr, "inode.cpp: get_inode_for_path: path must start with root: /");
+        return false;
+    }
+
+    inode_t *cur_inode = (inode_t *)malloc(sizeof(inode_t));
+    read_root_inode(cur_inode);
+
+    if (path_len == 1) {
+        // root node requested
+        *inode = *cur_inode;
+        return true;
+    }
+
+    char *filename = (char *)calloc(path_len + 1, sizeof(char));
+    inode_t *next_inode = (inode_t *)malloc(sizeof(inode_t));
+
+    int ind = 1;
+    while (true) {
+        int right_ind = ind;
+        while (right_ind < path_len && path[right_ind] != '/') {
+            ++right_ind;
+        }
+
+        memcpy(filename, path + ind, right_ind - ind);
+        filename[right_ind - ind + 1] = 0;
+        if (!get_inode_child_by_filename(cur_inode, filename, next_inode)) {
+            fprintf(stderr, "inode.cpp: get_inode_for_path: inode for filename %s was not found...", filename);
+            free(cur_inode);
+            free(next_inode);
+            return false;
+        }
+
+        if (right_ind >= path_len) {
+            break;
+        }
+
+        ind = right_ind + 1;
+        cur_inode = next_inode;
+    }
+
+    free(next_inode);
+    *inode = *cur_inode
+    return true;
 }

@@ -2,6 +2,7 @@
 
 #include <mini_fs.h>
 #include <files.h>
+#include "inode.h"
 
 bool check_fs() {
     int64_t fsize = file_size(Fd);
@@ -128,12 +129,43 @@ bool close_fs() {
 }
 
 
-int ls(char *filepath) {
+bool ls(char *filepath) {
 
+    inode_t *inode = NULL;
+    if (!get_inode_for_path(filepath, &inode)) {
+        fprintf(stderr, "mini_fs.c: ls: failed to get inode for path %s", filepath);
+        return false;
+    }
 
+    if (!inode->directory) {
+        fprintf(stderr, "mini_fs.c: ls: %s is not a directory", filepath);
+        free(inode);
+        return false;
+    }
 
+    int32_t inodes_count = 0;
+    inode_t *inode_children = NULL;
+    char **inode_filenames = NULL;
+    if (!directory_inodes(inode, &inodes_count, &inode_children, &inode_filenames)) {
+        fprintf(stderr, "mini_fs.c: ls: failed to get directory children");
+        free(inode);
+        return false;
+    }
 
-    return -1;
+    for (int i = 0; i < inodes_count; ++i) {
+        printf("%s\n", inode_filenames[i]);
+    }
+
+    free(inode_children);
+    for (int i = 0; i < inodes_count; ++i) {
+        free(inode_filenames[i]);
+    }
+
+    return true;
+}
+
+bool mkdir(char *filepath) {
+    return false;
 }
 
 

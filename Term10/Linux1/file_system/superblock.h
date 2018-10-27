@@ -32,6 +32,8 @@ bool get_free_sector_address(int32_t *sector_address);
 // inode
 bool read_inode(int index, inode_t *inode);
 
+bool read_root_inode(inode_t *inode);
+
 bool update_inode(int index, inode_t *inode);
 
 bool remove_inode(int index);

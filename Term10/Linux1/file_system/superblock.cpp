@@ -176,6 +176,17 @@ bool read_inode(int index, inode_t *inode) {
         return false;
     }
 
+    if (index >= INODE_NUM) {
+        fprintf(stderr, "superblock.cpp: read_inode: index %d is "
+                        "greater then max number of inodes %d", index, INODE_NUM);
+        return false;
+    }
+
+    if (!Superblock.inodes_used[index]) {
+        fprintf(stderr, "superblock.cpp: read_inode: inode with index %d is not busy", index);
+        return false;
+    }
+
     int bytes_read = pread(Fd, inode, INODE_SIZE, root_inode_address() + index * INODE_SIZE);
     if (bytes_read < INODE_SIZE) {
         fprintf(stderr, "superblock.cpp: read_inode: failed to read inode: invalid bytes number: %d", bytes_read);
@@ -183,6 +194,10 @@ bool read_inode(int index, inode_t *inode) {
     }
 
     return true;
+}
+
+bool read_root_inode(inode_t *inode) {
+    return read_inode(0, inode);
 }
 
 bool update_inode(int index, inode_t *inode) {

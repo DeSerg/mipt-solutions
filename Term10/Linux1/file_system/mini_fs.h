@@ -13,7 +13,10 @@ bool prepare_fs(const char *filename);
 bool close_fs();
 
 
-int ls(char *filepath);
+bool ls(char *filepath);
+
+
+bool mkdir(char *filepath);
 
 
 int cat(char *filepath);
