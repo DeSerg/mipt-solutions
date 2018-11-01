@@ -97,8 +97,12 @@ public:
         request << "Host: " << host_name << "\r\n\r\n";
 
         for(int i = 0; i < ip_addresses.size(); ++i) {
-            if (http_get(request.str(), ip_addresses[i], port, filename)) {
-                return true;
+            try {
+                if (http_get(request.str(), ip_addresses[i], port, filename)) {
+                    return true;
+                }
+            } catch (std::exception &ex) {
+                std::cout << "Failed to perform http get: " << ex.what() << std::endl;
             }
         }
 
@@ -240,13 +244,13 @@ private:
                 delim_position = buffer[i] == body_delimeter[delim_position] ? ++delim_position : 0;
                 if (delim_position >= body_delimiter_len) {
                     delim_not_found = false;
-                    delim_end_ind = i;
+                    delim_end_ind = i + 1;
                     break;
                 }
             }
         }
 
-        int bytes_expected;
+        int bytes_expected = 0;
         std::string h = header.str();
         std::stringstream(header_value(h, "Content-Length")) >> bytes_expected;
 
@@ -258,6 +262,8 @@ private:
             if (bytes_received <= 0) {
                 std::cout << "Failed to read data from socket" << std::endl;
                 ::close(sd);
+                perror("Fail");
+                std::cout << "Errno: " << errno << std::endl;
                 return false;
             }
 
@@ -280,11 +286,12 @@ private:
 int main(int argc, char* argv[])
 {
 //    if (argc < 3) {
-//        cout << "Invalid arguments" << endl;
+//        cout << "Invalid arguments. Usage: downloader_binary url filename" << endl;
 //    }
 //     download(argv[1], argv[2]);
     auto downloader = HttpFileDownloader();
-    downloader.file_download("http://www.cplusplus.com/ico/social_googleplus.png", "img.png");
+//    downloader.file_download("http://www.cplusplus.com/ico/social_googleplus.png", "img.png");
+    downloader.file_download("http://manager.strij.lan:8787/media/%D0%A1%D1%82%D1%80%D0%B8%D0%B6.exe", "strij.exe");
 
     return 0;
 }
