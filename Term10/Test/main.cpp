@@ -37,13 +37,11 @@ public:
         std::string path;
         int port = 0;
         if (!url_parse(url, host_name, path, port)) {
-            std::cout << "Failed to parse url" << std::endl;
             return false;
         }
 
         std::vector<std::string> ip_addresses;
         if (!dns_lookup(host_name, ip_addresses)) {
-            std::cout << "Failed to get ip from hostname" << std::endl;
             return false;
         }
 
@@ -78,6 +76,8 @@ private:
                 return false;
             }
             protocol_offset += 3;
+        } else {
+            protocol_offset = 0;
         }
 
         size_t slash_pos = url.find_first_of('/', protocol_offset);
@@ -314,6 +314,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 3) {
         std::cout << "Invalid arguments. Usage: file_downloader url filename" << std::endl;
+        return 1;
     }
 
     auto downloader = HttpFileDownloader();
