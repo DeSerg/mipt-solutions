@@ -5,7 +5,7 @@
 #ifndef FILE_SYSTEM_INODE_H
 #define FILE_SYSTEM_INODE_H
 
-#include <superblock.h>
+#include <file_system/superblock.h>
 
 // directories
 bool directory_inodes(inode_t *directory, int32_t *inodes_count, inode_t **inodes, char ***filenames);

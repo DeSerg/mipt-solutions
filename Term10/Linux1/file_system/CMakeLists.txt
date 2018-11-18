@@ -6,12 +6,23 @@ INCLUDE_DIRECTORIES("${BASEPATH}")
 
 set(CMAKE_C_STANDARD 99)
 
-set(SOURCES
-        superblock.h
-        system.h
-        system.c
-        mini_fs.h
-        mini_fs.c
-        files.c files.h superblock.c inode.c inode.h tools.c tools.h)
+set(FILE_SYSTEM
+        file_system/mini_fs.c
+        file_system/files.c
+        file_system/superblock.c
+        file_system/inode.c
+)
 
-add_executable(file_system main.c ${SOURCES})
+set(TOOLS
+        tools/tools.c
+        tools/messages.c
+)
+
+set(SOURCES
+        system.c
+        ${FILE_SYSTEM}
+        ${TOOLS}
+)
+
+add_executable(file_system_server server.c ${SOURCES})
+add_executable(file_system_client client.c ${SOURCES} server.h)

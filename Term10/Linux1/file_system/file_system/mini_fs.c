@@ -1,9 +1,11 @@
 #include <stdlib.h>
 
-#include <mini_fs.h>
-#include <files.h>
-#include <inode.h>
+#include <file_system/mini_fs.h>
+#include <file_system/files.h>
+#include <file_system/inode.h>
 
+////////////////////////////////////////////
+// module methods
 bool check_fs() {
     int64_t fsize = file_size(Fd);
     if (fsize < 0) {
@@ -45,6 +47,8 @@ bool reset_superblock_() {
         fprintf(stderr, "mini_fs.c: reset_superblock_: failed to set root inode to used\n");
         return false;
     }
+
+    if (!)
 
     return true;
 }
@@ -97,6 +101,8 @@ void delete_superblock() {
     free(Superblock.sectors_used);
 }
 
+////////////////////////////////////////////
+// mini_fs.h implementation
 bool prepare_fs(const char *filename) {
 
     Fd = open(filename, O_RDWR | O_CREAT);

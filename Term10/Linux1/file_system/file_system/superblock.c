@@ -3,8 +3,8 @@
 //
 
 #include <system.h>
-#include <files.h>
-#include <superblock.h>
+#include <file_system/files.h>
+#include <file_system/superblock.h>
 
 
 // common bit mask methods
@@ -47,21 +47,12 @@ bool update_bit_mask_(bool *bit_mask, int ind, bool value, int32_t fd_offset) {
     }
 
     int byte_num = ind / 8;
-    int shift = ind % 8;
+    int shift = 7 - ind % 8;
 
-    uint32_t mask = 0;
-    uint32_t zero_mask = 0;
-    for (int i = 0; i < 8; ++i) {
-        if (i == shift) {
-            mask |= value << i;
-            zero_mask |= 0 << i;
-        } else {
-            mask |= 1 << i;
-            zero_mask |= 1 << i;
-        }
-    }
+    uint8_t mask = value << shift;
+    uint8_t zero_mask = ~(1 << shift);
 
-    uint32_t read_byte = 0;
+    uint8_t read_byte = 0;
     if (pread(Fd, &read_byte, 1, inode_bit_mask_address() + byte_num) == -1) {
         fprintf(stderr, "superblock.cpp: update_bit_mask_: failed to read %d byte\n", fd_offset + byte_num);
         return false;
@@ -70,13 +61,10 @@ bool update_bit_mask_(bool *bit_mask, int ind, bool value, int32_t fd_offset) {
     read_byte &= zero_mask;
     read_byte |= mask;
 
-    if (lseek(Fd, -1, SEEK_CUR) == -1) {
-        fprintf(stderr, "superblock.cpp: update_bit_mask_: failed to move fd cursor back\n");
-        return false;
-    }
-
-    if (write(Fd, &read_byte, 1) != 1) {
+    ssize_t written = write(Fd, &read_byte, 1);
+    if (written != 1) {
         fprintf(stderr, "superblock.cpp: update_bit_mask_: failed to write byte %d\n", read_byte);
+        perror("");
         return false;
     }
 
@@ -209,9 +197,9 @@ bool update_inode(int index, inode_t *inode) {
         return false;
     }
 
-    int bytes_written = pwrite(Fd, inode, INODE_SIZE, root_inode_address() + index * INODE_SIZE);
+    ssize_t bytes_written = pwrite(Fd, inode, INODE_SIZE, root_inode_address() + index * INODE_SIZE);
     if (bytes_written < INODE_SIZE) {
-        fprintf(stderr, "superblock.cpp: update_inode: failed to write inode: invalid bytes number: %d\n", bytes_written);
+        fprintf(stderr, "superblock.cpp: update_inode: failed to write inode: invalid bytes number: %zi\n", bytes_written);
         return false;
     }
 

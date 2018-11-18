@@ -2,10 +2,10 @@
 // Created by deserg on 14/10/2018.
 //
 
-#include <inode.h>
+#include <file_system/inode.h>
 
-#include <files.h>
-#include <superblock.h>
+#include <file_system/files.h>
+#include <file_system/superblock.h>
 #include <system.h>
 
 // helping methods
