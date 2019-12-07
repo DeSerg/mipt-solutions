@@ -1,11 +1,15 @@
-//
-// Created by deserg on 07/12/2019.
-//
+/*!
+ \file
+ \brief Заголовочный файл библиотеки lib.h
+*/
 
 #pragma once
 
 namespace lib {
 
+/*!
+ Выводит в stdout "foo called"
+*/
 void foo();
 
 }

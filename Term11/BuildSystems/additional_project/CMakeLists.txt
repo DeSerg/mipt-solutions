@@ -16,7 +16,12 @@ add_custom_target(
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/C/preparing.py ${CMAKE_CURRENT_SOURCE_DIR}/C
 )
 
-add_dependencies(additional_project index)
+add_custom_target(
+    doxygen
+    COMMAND doxygen doxygen.conf
+)
+
+add_dependencies(additional_project index doxygen)
 
 target_link_libraries(additional_project A)
 

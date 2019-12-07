@@ -1,6 +1,7 @@
-//
-// Created by deserg on 07/12/2019.
-//
+/*!
+ \file
+ \brief Заголовочный файл для главного файла проекта main.cpp
+*/
 
 #pragma once
 

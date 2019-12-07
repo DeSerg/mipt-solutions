@@ -4,6 +4,11 @@ import os
 import sys
 
 INDEX_H_CONTENTS = '''#pragma once
+/*!
+ \\file
+ \\brief Заголовочный файл с общими для проекта константами.
+*/
+
 
 constexpr char kProjectTitle[] = "Additional Project";
 
