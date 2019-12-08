@@ -6,6 +6,5 @@
 
 ## Как запускать программу
 `python3 ethernet.py <stations_number>`
-Здесь <stations_number> - число станций в сети, от 1 до 1024
 
-
+Здесь `<stations_number>` - число станций в сети, от 1 до 1024
